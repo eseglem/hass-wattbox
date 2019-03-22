@@ -1,0 +1,6 @@
+[
+  "https://raw.githubusercontent.com/eseglem/hass-wattbox/master/custom_components/wattbox/__init__.py",
+  "https://raw.githubusercontent.com/eseglem/hass-wattbox/master/custom_components/wattbox/const.py",
+  "https://raw.githubusercontent.com/eseglem/hass-wattbox/master/custom_components/wattbox/sensor.py",
+  "https://raw.githubusercontent.com/eseglem/hass-wattbox/master/custom_components/wattbox/switch.py"
+]
