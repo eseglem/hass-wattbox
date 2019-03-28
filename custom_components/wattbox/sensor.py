@@ -2,10 +2,10 @@
 import logging
 
 import voluptuous as vol
-
 import homeassistant.helpers.config_validation as cv
 from homeassistant.const import CONF_NAME, CONF_RESOURCES
 from homeassistant.helpers.entity import Entity
+
 from . import update_data
 from .const import DOMAIN_DATA, SENSOR_TYPES
 

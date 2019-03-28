@@ -9,7 +9,6 @@ import logging
 from datetime import timedelta
 
 import voluptuous as vol
-
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import discovery
 from homeassistant.util import Throttle
@@ -22,6 +21,7 @@ from homeassistant.const import (
     CONF_SWITCHES,
     CONF_USERNAME,
 )
+
 from .const import (
     BINARY_SENSOR_TYPES,
     DEFAULT_NAME,

@@ -13,7 +13,6 @@ async def async_setup_platform(
     name = discovery_info[CONF_NAME]
     entities = []
 
-    # The Hardware Version has the number of outlets at the end.
     num_switches = hass.data[DOMAIN_DATA].number_outlets
 
     for i in range(num_switches):

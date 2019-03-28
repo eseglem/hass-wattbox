@@ -3,6 +3,7 @@ import logging
 
 from homeassistant.components.binary_sensor import BinarySensorDevice
 from homeassistant.const import CONF_NAME, CONF_RESOURCES
+
 from . import update_data
 from .const import BINARY_SENSOR_TYPES, DOMAIN_DATA
 
@@ -28,7 +29,7 @@ async def async_setup_platform(
 
 
 class WattBoxBinarySensor(BinarySensorDevice):
-    """blueprint binary_sensor class."""
+    """WattBox binary_sensor class."""
 
     def __init__(self, hass, name, sensor_type):
         self.hass = hass
