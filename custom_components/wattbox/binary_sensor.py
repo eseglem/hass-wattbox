@@ -36,7 +36,7 @@ class WattBoxBinarySensor(BinarySensorDevice):
         self.attr = {}
         self.type = sensor_type
         self._status = False
-        self._name = name.lower() + "_" + BINARY_SENSOR_TYPES[sensor_type][0]
+        self._name = name + " " + BINARY_SENSOR_TYPES[sensor_type][0]
 
     async def async_update(self):
         """Update the sensor."""

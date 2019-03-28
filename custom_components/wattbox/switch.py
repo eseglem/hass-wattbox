@@ -29,7 +29,7 @@ class WattBoxBinarySwitch(SwitchDevice):
         self.attr = {}
         self.index = index
         self._status = False
-        self._name = name.lower() + "_outlet_" + str(index + 1)
+        self._name = name + " Outlet " + str(index + 1)
 
     async def async_update(self):
         """Update the sensor."""

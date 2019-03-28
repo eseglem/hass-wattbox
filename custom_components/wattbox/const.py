@@ -4,7 +4,7 @@ from homeassistant.const import POWER_WATT
 # Base component constants
 DOMAIN = "wattbox"
 DOMAIN_DATA = "{}_data".format(DOMAIN)
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 PLATFORMS = ["sensor", "switch"]
 REQUIRED_FILES = ["binary_sensor.py", "const.py", "sensor.py", "switch.py"]
 ISSUE_URL = "https://github.com/eseglem/hass-wattbox/issues"
@@ -24,7 +24,7 @@ ICON = "mdi:power"
 PLUG_ICON = "mdi:power-socket-us"
 
 # Defaults
-DEFAULT_NAME = DOMAIN
+DEFAULT_NAME = "WattBox"
 DEFAULT_PASSWORD = DOMAIN
 DEFAULT_PORT = 80
 DEFAULT_USER = DOMAIN

@@ -37,7 +37,7 @@ class WattBoxSensor(Entity):
         self.hass = hass
         self.attr = {}
         self.type = sensor_type
-        self._name = name.lower() + "_" + SENSOR_TYPES[self.type][0]
+        self._name = name + " " + SENSOR_TYPES[self.type][0]
         self._state = None
         self._unit = SENSOR_TYPES[self.type][1]
 
