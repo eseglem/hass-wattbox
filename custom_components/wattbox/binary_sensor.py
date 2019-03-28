@@ -47,7 +47,7 @@ class WattBoxBinarySensor(BinarySensorDevice):
         updated = self.hass.data[DOMAIN_DATA]
 
         # Check the data and update the value.
-        self._state = getattr(updated, self.type)
+        self._status = getattr(updated, self.type)
 
     @property
     def name(self):
