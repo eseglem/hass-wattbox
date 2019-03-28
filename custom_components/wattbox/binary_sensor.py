@@ -1,41 +1,44 @@
-"""Binary sensor platform for blueprint."""
+"""Binary sensor platform for wattbox."""
+import logging
+
 from homeassistant.components.binary_sensor import BinarySensorDevice
 from homeassistant.const import (
+    CONF_NAME,
     CONF_RESOURCES, 
 )
 from . import update_data
 from .const import (
+    BINARY_SENSOR_TYPES,
     DOMAIN_DATA,
 )
 
-# TODO: Device Classes
-SENSOR_TYPES = {
-    'audible_alarm': ['Audible Alarm', ''],
-    'auto_reboot': ['Auto Reboot', ''],
-    'battery_health': ['Battery Health', ''],
-    'battery_test': ['Battery Test', ''],
-    'cloud_status': ['Cloud Status', ''],
-    'has_ups': ['Has UPS', ''],
-    'mute': ['Mute', ''],
-    'power_lost': ['Power Lost', ''],
-    'safe_voltage_status': ['Safe Voltage Status', ''],
-}
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):  # pylint: disable=unused-argument
     """Setup binary_sensor platform."""
-    # TODO: Loop
-    async_add_entities([WattBoxBinarySensor(hass, discovery_info)], True)
+    name = discovery_info[CONF_NAME]
+    entities = []
+
+    for resource in discovery_info[CONF_RESOURCES]:
+        sensor_type = resource.lower()
+
+        if sensor_type not in BINARY_SENSOR_TYPES:
+            continue
+
+        entities.append(WattBoxBinarySensor(hass, name, sensor_type))
+
+    async_add_entities(entities, True)
 
 
 class WattBoxBinarySensor(BinarySensorDevice):
     """blueprint binary_sensor class."""
 
-    def __init__(self, hass, sensor_type):
+    def __init__(self, hass, name, sensor_type):
         self.hass = hass
         self.attr = {}
         self.type = sensor_type
         self._status = False
-        self._name = SENSOR_TYPES[sensor_type][0]
+        self._name = name.lower() + "_" + BINARY_SENSOR_TYPES[sensor_type][0]
 
     async def async_update(self):
         """Update the sensor."""
@@ -56,7 +59,7 @@ class WattBoxBinarySensor(BinarySensorDevice):
     @property
     def device_class(self):
         """Return the class of this binary_sensor."""
-        return SENSOR_TYPES[self.type][1]
+        return BINARY_SENSOR_TYPES[self.type][1]
 
     @property
     def is_on(self):

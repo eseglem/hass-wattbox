@@ -14,43 +14,49 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import discovery
 from homeassistant.util import Throttle
 from homeassistant.const import (
-    CONF_NAME,
     CONF_HOST,
-    CONF_PORT,
+    CONF_NAME,
     CONF_PASSWORD,
+    CONF_PORT,
     CONF_RESOURCES,
     CONF_SWITCHES,
     CONF_USERNAME,
 )
 from .const import (
+    BINARY_SENSOR_TYPES,
+    DEFAULT_NAME,
+    DEFAULT_PASSWORD,
+    DEFAULT_PORT,
+    DEFAULT_USER,
     DOMAIN_DATA,
     DOMAIN,
     ISSUE_URL,
     PLATFORMS,
     REQUIRED_FILES,
+    SENSOR_TYPES,
     STARTUP,
     VERSION,
-    DEFAULT_NAME,
-    DEFAULT_PASSWORD,
-    DEFAULT_PORT,
-    DEFAULT_USER,
 )
 
-REQUIREMENTS = ['pywattbox>=0.0.3']
+REQUIREMENTS = ['pywattbox>=0.0.4']
 
 _LOGGER = logging.getLogger(__name__)
 
-MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=30)
+MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=5)
+
+ALL_SENSOR_TYPES = {**BINARY_SENSOR_TYPES, **SENSOR_TYPES}
 
 CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(
             {
                 vol.Required(CONF_HOST): cv.string,
-                vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.integer,
+                vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.string,
                 vol.Optional(CONF_USERNAME, default=DEFAULT_USER): cv.string,
                 vol.Optional(CONF_PASSWORD, default=DEFAULT_PASSWORD): cv.string,
                 vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+                vol.Optional(CONF_RESOURCES, default=ALL_SENSOR_TYPES): 
+                    vol.All(cv.ensure_list, [vol.In(ALL_SENSOR_TYPES)]),
             }
         )
     },
@@ -82,11 +88,11 @@ async def async_setup(hass, config):
     # Load platforms
     for platform in PLATFORMS:
         # Get platform specific configuration
-        platform_config = config[DOMAIN].get(platform, {})
+        platform_config = config[DOMAIN]
 
         hass.async_create_task(
             discovery.async_load_platform(
-                hass, platform, DOMAIN, entry_config, config
+                hass, platform, DOMAIN, platform_config, config
             )
         )
     return True

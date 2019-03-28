@@ -1,59 +1,46 @@
+"""Sensor platform for wattbox."""
 import logging
 
 import voluptuous as vol
 
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import (
+    CONF_NAME,
     CONF_RESOURCES, 
-    POWER_WATT,
 )
 from homeassistant.helpers.entity import Entity
 from . import update_data
 from .const import (
     DOMAIN_DATA,
+    SENSOR_TYPES,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
-SENSOR_TYPES = {
-    'battery_charge': ['Battery Charge', '%', 'mdi:gauge'],
-    'battery_load': ['Battery Load', '%', 'mdi:gauge'],
-    'current_value': ['Current', 'A', 'mdi:current-ac'],
-    'est_run_time': ['Estimated Run Time', 'min', 'mdi:update'],
-    'power_value': ['Power', POWER_WATT, 'mdi:lightbulb-outline'],
-    'voltage_value': ['Voltage', 'V', 'mdi:flash-circle'],
-}
-
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_RESOURCES, default=[]): 
-        vol.All(cv.ensure_list, [vol.In(SENSOR_TYPES)]),
-})
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):  # pylint: disable=unused-argument
     """Setup sensor platform."""
+    name = discovery_info[CONF_NAME]
     entities = []
 
-    for resource in config[CONF_RESOURCES]:
+    for resource in discovery_info[CONF_RESOURCES]:
         sensor_type = resource.lower()
 
         if sensor_type not in SENSOR_TYPES:
-            # How to only warn if in neither type?
-            # _LOGGER.warning("Sensor type: %s is not a valid type.", sensor_type)
             continue
 
-        entities.append(WattBoxSensor(hass, sensor_type))
+        entities.append(WattBoxSensor(hass, name, sensor_type))
 
     async_add_entities(entities, True)
 
 class WattBoxSensor(Entity):
     """WattBox Sensor class."""
 
-    def __init__(self, hass, sensor_type):
+    def __init__(self, hass, name, sensor_type):
         self.hass = hass
         self.attr = {}
         self.type = sensor_type
-        self._name = SENSOR_TYPES[self.type][0]
+        self._name = name.lower() + "_" + SENSOR_TYPES[self.type][0]
         self._state = None
         self._unit = SENSOR_TYPES[self.type][1]
 
