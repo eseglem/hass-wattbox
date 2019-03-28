@@ -2,19 +2,16 @@
 import logging
 
 from homeassistant.components.binary_sensor import BinarySensorDevice
-from homeassistant.const import (
-    CONF_NAME,
-    CONF_RESOURCES, 
-)
+from homeassistant.const import CONF_NAME, CONF_RESOURCES
 from . import update_data
-from .const import (
-    BINARY_SENSOR_TYPES,
-    DOMAIN_DATA,
-)
+from .const import BINARY_SENSOR_TYPES, DOMAIN_DATA
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):  # pylint: disable=unused-argument
+
+async def async_setup_platform(
+    hass, config, async_add_entities, discovery_info=None
+):  # pylint: disable=unused-argument
     """Setup binary_sensor platform."""
     name = discovery_info[CONF_NAME]
     entities = []

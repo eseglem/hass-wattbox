@@ -38,7 +38,7 @@ from .const import (
     VERSION,
 )
 
-REQUIREMENTS = ['pywattbox>=0.0.4']
+REQUIREMENTS = ["pywattbox>=0.0.4"]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,8 +55,9 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_USERNAME, default=DEFAULT_USER): cv.string,
                 vol.Optional(CONF_PASSWORD, default=DEFAULT_PASSWORD): cv.string,
                 vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-                vol.Optional(CONF_RESOURCES, default=ALL_SENSOR_TYPES): 
-                    vol.All(cv.ensure_list, [vol.In(ALL_SENSOR_TYPES)]),
+                vol.Optional(CONF_RESOURCES, default=ALL_SENSOR_TYPES): vol.All(
+                    cv.ensure_list, [vol.In(ALL_SENSOR_TYPES)]
+                ),
             }
         )
     },

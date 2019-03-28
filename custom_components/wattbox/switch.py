@@ -3,20 +3,20 @@ from homeassistant.components.switch import SwitchDevice
 from homeassistant.const import CONF_NAME
 
 from . import update_data
-from .const import (
-    DOMAIN_DATA,
-    PLUG_ICON,
-)
+from .const import DOMAIN_DATA, PLUG_ICON
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):  # pylint: disable=unused-argument
+
+async def async_setup_platform(
+    hass, config, async_add_entities, discovery_info=None
+):  # pylint: disable=unused-argument
     """Setup switch platform."""
     name = discovery_info[CONF_NAME]
     entities = []
 
-    # The Hardware Version has the number of outlets at the end. 
+    # The Hardware Version has the number of outlets at the end.
     num_switches = hass.data[DOMAIN_DATA].number_outlets
 
-    for i in range(num_switches): 
+    for i in range(num_switches):
         entities.append(WattBoxBinarySwitch(hass, name, i))
 
     async_add_entities(entities, True)
@@ -28,7 +28,7 @@ class WattBoxBinarySwitch(SwitchDevice):
     def __init__(self, hass, name, index):
         self.hass = hass
         self.attr = {}
-        self.index = index 
+        self.index = index
         self._status = False
         self._name = name.lower() + "_outlet_" + str(index + 1)
 

@@ -4,21 +4,17 @@ import logging
 import voluptuous as vol
 
 import homeassistant.helpers.config_validation as cv
-from homeassistant.const import (
-    CONF_NAME,
-    CONF_RESOURCES, 
-)
+from homeassistant.const import CONF_NAME, CONF_RESOURCES
 from homeassistant.helpers.entity import Entity
 from . import update_data
-from .const import (
-    DOMAIN_DATA,
-    SENSOR_TYPES,
-)
+from .const import DOMAIN_DATA, SENSOR_TYPES
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):  # pylint: disable=unused-argument
+async def async_setup_platform(
+    hass, config, async_add_entities, discovery_info=None
+):  # pylint: disable=unused-argument
     """Setup sensor platform."""
     name = discovery_info[CONF_NAME]
     entities = []
@@ -32,6 +28,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         entities.append(WattBoxSensor(hass, name, sensor_type))
 
     async_add_entities(entities, True)
+
 
 class WattBoxSensor(Entity):
     """WattBox Sensor class."""
