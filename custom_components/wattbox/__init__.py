@@ -38,7 +38,7 @@ from .const import (
     VERSION,
 )
 
-REQUIREMENTS = ["pywattbox>=0.0.4"]
+REQUIREMENTS = ["pywattbox>=0.1.0"]
 
 _LOGGER = logging.getLogger(__name__)
 
