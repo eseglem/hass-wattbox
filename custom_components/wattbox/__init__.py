@@ -38,30 +38,29 @@ from .const import (
     VERSION,
 )
 
-REQUIREMENTS = ["pywattbox>=0.1.0"]
+REQUIREMENTS = ["pywattbox>=0.2.0"]
 
 _LOGGER = logging.getLogger(__name__)
 
 MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=5)
 
-ALL_SENSOR_TYPES = {**BINARY_SENSOR_TYPES, **SENSOR_TYPES}
+ALL_SENSOR_TYPES = list({**BINARY_SENSOR_TYPES, **SENSOR_TYPES}.keys())
+
+WATTBOX_HOST_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_HOST): cv.string,
+        vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.string,
+        vol.Optional(CONF_USERNAME, default=DEFAULT_USER): cv.string,
+        vol.Optional(CONF_PASSWORD, default=DEFAULT_PASSWORD): cv.string,
+        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+        vol.Optional(CONF_RESOURCES, default=ALL_SENSOR_TYPES): vol.All(
+            cv.ensure_list, [vol.In(ALL_SENSOR_TYPES)]
+        ),
+    }
+)
 
 CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: vol.Schema(
-            {
-                vol.Required(CONF_HOST): cv.string,
-                vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.string,
-                vol.Optional(CONF_USERNAME, default=DEFAULT_USER): cv.string,
-                vol.Optional(CONF_PASSWORD, default=DEFAULT_PASSWORD): cv.string,
-                vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-                vol.Optional(CONF_RESOURCES, default=ALL_SENSOR_TYPES): vol.All(
-                    cv.ensure_list, [vol.In(ALL_SENSOR_TYPES)]
-                ),
-            }
-        )
-    },
-    extra=vol.ALLOW_EXTRA,
+    {DOMAIN: vol.All(cv.ensure_list, [WATTBOX_HOST_SCHEMA])}, extra=vol.ALLOW_EXTRA
 )
 
 
@@ -78,33 +77,35 @@ async def async_setup(hass, config):
     if not file_check:
         return False
 
-    # Create DATA dict
-    host = config[DOMAIN].get(CONF_HOST)
-    password = config[DOMAIN].get(CONF_PASSWORD)
-    port = config[DOMAIN].get(CONF_PORT)
-    username = config[DOMAIN].get(CONF_USERNAME)
+    hass.data[DOMAIN_DATA] = {}
 
-    hass.data[DOMAIN_DATA] = WattBox(host, port, username, password)
+    for wattbox_host in config[DOMAIN]:
+        # Create DATA dict
+        host = wattbox_host.get(CONF_HOST)
+        password = wattbox_host.get(CONF_PASSWORD)
+        port = wattbox_host.get(CONF_PORT)
+        username = wattbox_host.get(CONF_USERNAME)
+        name = wattbox_host.get(CONF_NAME)
 
-    # Load platforms
-    for platform in PLATFORMS:
-        # Get platform specific configuration
-        platform_config = config[DOMAIN]
+        hass.data[DOMAIN_DATA][name] = WattBox(host, port, username, password)
 
-        hass.async_create_task(
-            discovery.async_load_platform(
-                hass, platform, DOMAIN, platform_config, config
+        # Load platforms
+        for platform in PLATFORMS:
+            # Get platform specific configuration
+            hass.async_create_task(
+                discovery.async_load_platform(
+                    hass, platform, DOMAIN, wattbox_host, config
+                )
             )
-        )
     return True
 
 
 @Throttle(MIN_TIME_BETWEEN_UPDATES)
-async def update_data(hass):
+async def update_data(hass, name):
     """Update data."""
     # This is where the main logic to update platform data goes.
     try:
-        hass.data[DOMAIN_DATA].update()
+        hass.data[DOMAIN_DATA][name].update()
     except Exception as error:  # pylint: disable=broad-except
         _LOGGER.error("Could not update data - %s", error)
 

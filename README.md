@@ -1,7 +1,28 @@
 # hass-wattbox
 Home Assistant WattBox Component
 
-Configuration:
+
+Example Config:
+```
+wattbox:
+- host: 192.168.1.100
+  name: wattbox1
+  username: username1
+  password: password1
+- host: 192.168.1.101
+  name: wattbox2
+  username: username2
+  password: password2
+  resources:
+  - auto_reboot
+  - mute
+  - safe_voltage_status
+  - current_value
+  - power_value
+  - voltage_value
+```
+
+Configuration Options:
 
 * *host*: Host IP of the WattBox (Required)
 * *port*: Port of the HTTP interface (Default 80)
@@ -26,6 +47,8 @@ Resources:
 * est_run_time
 * power_value
 * voltage_value
+
+Master switch will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly. 
 
 Based on the Blueprint found at: https://github.com/custom-components/blueprint
 And the apcupsd component at: https://github.com/home-assistant/home-assistant/tree/dev/homeassistant/components/apcupsd

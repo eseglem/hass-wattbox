@@ -37,6 +37,7 @@ class WattBoxSensor(Entity):
         self.hass = hass
         self.attr = {}
         self.type = sensor_type
+        self.wattbox_name = name
         self._name = name + " " + SENSOR_TYPES[self.type][0]
         self._state = None
         self._unit = SENSOR_TYPES[self.type][1]
@@ -44,10 +45,10 @@ class WattBoxSensor(Entity):
     async def async_update(self):
         """Update the sensor."""
         # Send update "signal" to the component
-        await update_data(self.hass)
+        await update_data(self.hass, self.wattbox_name)
 
         # Get new data (if any)
-        updated = self.hass.data[DOMAIN_DATA]
+        updated = self.hass.data[DOMAIN_DATA][self.wattbox_name]
 
         # Check the data and update the value.
         self._state = getattr(updated, self.type)

@@ -13,9 +13,10 @@ async def async_setup_platform(
     name = discovery_info[CONF_NAME]
     entities = []
 
-    num_switches = hass.data[DOMAIN_DATA].number_outlets
+    num_switches = hass.data[DOMAIN_DATA][name].number_outlets
 
-    for i in range(num_switches):
+    entities.append(WattBoxMasterSwitch(hass, name))
+    for i in range(1, num_switches + 1):
         entities.append(WattBoxBinarySwitch(hass, name, i))
 
     async_add_entities(entities, True)
@@ -28,17 +29,17 @@ class WattBoxBinarySwitch(SwitchDevice):
         self.hass = hass
         self.attr = {}
         self.index = index
+        self.wattbox_name = name
         self._status = False
-        self._name = name + " Outlet " + str(index + 1)
+        self._name = name + " Outlet " + str(index)
 
     async def async_update(self):
         """Update the sensor."""
         # Send update "signal" to the component
-        await update_data(self.hass)
+        await update_data(self.hass, self.wattbox_name)
 
         # Get new data (if any)
-        updated = self.hass.data[DOMAIN_DATA]
-        # self.index starts at 1, but list starts at 0
+        updated = self.hass.data[DOMAIN_DATA][self.wattbox_name]
         outlet = updated.outlets[self.index]
 
         # Check the data and update the value.
@@ -51,12 +52,12 @@ class WattBoxBinarySwitch(SwitchDevice):
 
     async def async_turn_on(self, **kwargs):  # pylint: disable=unused-argument
         """Turn on the switch."""
-        self.hass.data[DOMAIN_DATA].outlets[self.index].turn_on()
+        self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_on()
         self._status = True
 
     async def async_turn_off(self, **kwargs):  # pylint: disable=unused-argument
         """Turn off the switch."""
-        self.hass.data[DOMAIN_DATA].outlets[self.index].turn_off()
+        self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_off()
         self._status = False
 
     @property
@@ -78,3 +79,13 @@ class WattBoxBinarySwitch(SwitchDevice):
     def device_state_attributes(self):
         """Return the state attributes."""
         return self.attr
+
+
+class WattBoxMasterSwitch(WattBoxBinarySwitch):
+    def __init__(self, hass, name):
+        self.hass = hass
+        self.attr = {}
+        self.index = 0
+        self.wattbox_name = name
+        self._status = False
+        self._name = name + " Master Switch"
