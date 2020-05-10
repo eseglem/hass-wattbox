@@ -1,0 +1,10 @@
+{
+    "name": "Wattbox",
+    "domains": [
+        "binary_sensor",
+        "sensor",
+        "switch"
+    ],
+    "iot_class": "Local Polling",
+    "homeassistant": "0.108.0"
+}

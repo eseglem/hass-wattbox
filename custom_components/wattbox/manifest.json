@@ -1,0 +1,12 @@
+{
+    "domain": "wattbox",
+    "name": "WattBox",
+    "documentation": "https://github.com/eseglem/hass-wattbox",
+    "dependencies": [],
+    "codeowners": [
+        "@eseglem"
+    ],
+    "requirements": [
+        "pywattbox>=0.2.0"
+    ]
+}

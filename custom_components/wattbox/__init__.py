@@ -18,7 +18,6 @@ from homeassistant.const import (
     CONF_PASSWORD,
     CONF_PORT,
     CONF_RESOURCES,
-    CONF_SWITCHES,
     CONF_USERNAME,
 )
 
@@ -87,7 +86,9 @@ async def async_setup(hass, config):
         username = wattbox_host.get(CONF_USERNAME)
         name = wattbox_host.get(CONF_NAME)
 
-        hass.data[DOMAIN_DATA][name] = WattBox(host, port, username, password)
+        hass.data[DOMAIN_DATA][name] = await hass.async_add_executor_job(
+            WattBox, host, port, username, password
+        )
 
         # Load platforms
         for platform in PLATFORMS:
@@ -97,6 +98,8 @@ async def async_setup(hass, config):
                     hass, platform, DOMAIN, wattbox_host, config
                 )
             )
+    _LOGGER.debug(", ".join([str(v) for k, v in hass.data[DOMAIN_DATA].items()]))
+    _LOGGER.debug(repr(hass.data[DOMAIN_DATA]))
     return True
 
 
@@ -105,7 +108,8 @@ async def update_data(hass, name):
     """Update data."""
     # This is where the main logic to update platform data goes.
     try:
-        hass.data[DOMAIN_DATA][name].update()
+        await hass.async_add_executor_job(hass.data[DOMAIN_DATA][name].update)
+        _LOGGER.debug("Updated: %s", hass.data[DOMAIN_DATA][name])
     except Exception as error:  # pylint: disable=broad-except
         _LOGGER.error("Could not update data - %s", error)
 

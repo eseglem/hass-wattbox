@@ -48,7 +48,9 @@ Resources:
 * power_value
 * voltage_value
 
-Master switch will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly. 
+Master switch will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly.
+
+Be careful, if the WattBox controls the power to its own networking equipment you can turn it off and not have remote access until you fix it. You may even have to plug it in elsewhere to get back online and turn that outlet back on in HA.
 
 Based on the Blueprint found at: https://github.com/custom-components/blueprint
 And the apcupsd component at: https://github.com/home-assistant/home-assistant/tree/dev/homeassistant/components/apcupsd

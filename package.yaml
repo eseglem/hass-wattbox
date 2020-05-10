@@ -6,6 +6,7 @@ description: WattBox Custom Component for Home Assistant.
 files:
 - custom_components/blueprint/__init__.py
 - custom_components/blueprint/const.py
+- custom_components/blueprint/binary_sensor.py
 - custom_components/blueprint/sensor.py
 - custom_components/blueprint/switch.py
 keywords:

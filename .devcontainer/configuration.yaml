@@ -1,0 +1,10 @@
+default_config:
+
+wattbox:
+  - host: !secret wattbox_ip
+
+logger:
+  default: error
+  logs:
+    custom_components.wattbox: debug
+

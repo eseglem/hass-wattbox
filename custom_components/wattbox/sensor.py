@@ -1,10 +1,8 @@
 """Sensor platform for wattbox."""
 import logging
 
-import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
 from homeassistant.const import CONF_NAME, CONF_RESOURCES
-from homeassistant.helpers.entity import Entity
+from homeassistant.components.binary_sensor import BinarySensorEntity
 
 from . import update_data
 from .const import DOMAIN_DATA, SENSOR_TYPES
@@ -30,7 +28,7 @@ async def async_setup_platform(
     async_add_entities(entities, True)
 
 
-class WattBoxSensor(Entity):
+class WattBoxSensor(BinarySensorEntity):
     """WattBox Sensor class."""
 
     def __init__(self, hass, name, sensor_type):

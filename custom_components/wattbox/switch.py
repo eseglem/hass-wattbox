@@ -1,9 +1,13 @@
 """Switch platform for blueprint."""
-from homeassistant.components.switch import SwitchDevice
+import logging
+
+from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import CONF_NAME
 
 from . import update_data
 from .const import DOMAIN_DATA, PLUG_ICON
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_platform(
@@ -22,7 +26,7 @@ async def async_setup_platform(
     async_add_entities(entities, True)
 
 
-class WattBoxBinarySwitch(SwitchDevice):
+class WattBoxBinarySwitch(SwitchEntity):
     """WattBox switch class."""
 
     def __init__(self, hass, name, index):
@@ -52,12 +56,26 @@ class WattBoxBinarySwitch(SwitchDevice):
 
     async def async_turn_on(self, **kwargs):  # pylint: disable=unused-argument
         """Turn on the switch."""
-        self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_on()
+        _LOGGER.debug(
+            "Turning On: %s - %s",
+            self.hass.data[DOMAIN_DATA][self.wattbox_name],
+            self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index],
+        )
+        await self.hass.async_add_executor_job(
+            self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_on
+        )
         self._status = True
 
     async def async_turn_off(self, **kwargs):  # pylint: disable=unused-argument
         """Turn off the switch."""
-        self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_off()
+        _LOGGER.debug(
+            "Turning Off: %s - %s",
+            self.hass.data[DOMAIN_DATA][self.wattbox_name],
+            self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index],
+        )
+        await self.hass.async_add_executor_job(
+            self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_off
+        )
         self._status = False
 
     @property
