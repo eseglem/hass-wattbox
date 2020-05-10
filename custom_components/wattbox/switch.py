@@ -40,7 +40,7 @@ class WattBoxBinarySwitch(SwitchEntity):
     async def async_update(self):
         """Update the sensor."""
         # Send update "signal" to the component
-        await update_data(self.hass, self.wattbox_name)
+        await update_data(self.hass)
 
         # Get new data (if any)
         updated = self.hass.data[DOMAIN_DATA][self.wattbox_name]
@@ -64,7 +64,7 @@ class WattBoxBinarySwitch(SwitchEntity):
         await self.hass.async_add_executor_job(
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_on
         )
-        self._status = True
+        await self.async_update()
 
     async def async_turn_off(self, **kwargs):  # pylint: disable=unused-argument
         """Turn off the switch."""
@@ -76,7 +76,7 @@ class WattBoxBinarySwitch(SwitchEntity):
         await self.hass.async_add_executor_job(
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_off
         )
-        self._status = False
+        await self.async_update()
 
     @property
     def name(self):

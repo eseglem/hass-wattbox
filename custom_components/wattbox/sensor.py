@@ -2,7 +2,7 @@
 import logging
 
 from homeassistant.const import CONF_NAME, CONF_RESOURCES
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.helpers.entity import Entity
 
 from . import update_data
 from .const import DOMAIN_DATA, SENSOR_TYPES
@@ -28,7 +28,7 @@ async def async_setup_platform(
     async_add_entities(entities, True)
 
 
-class WattBoxSensor(BinarySensorEntity):
+class WattBoxSensor(Entity):
     """WattBox Sensor class."""
 
     def __init__(self, hass, name, sensor_type):
@@ -43,7 +43,7 @@ class WattBoxSensor(BinarySensorEntity):
     async def async_update(self):
         """Update the sensor."""
         # Send update "signal" to the component
-        await update_data(self.hass, self.wattbox_name)
+        await update_data(self.hass)
 
         # Get new data (if any)
         updated = self.hass.data[DOMAIN_DATA][self.wattbox_name]

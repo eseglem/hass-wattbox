@@ -41,7 +41,7 @@ REQUIREMENTS = ["pywattbox>=0.2.0"]
 
 _LOGGER = logging.getLogger(__name__)
 
-MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=5)
+MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=1)
 
 ALL_SENSOR_TYPES = list({**BINARY_SENSOR_TYPES, **SENSOR_TYPES}.keys())
 
@@ -104,12 +104,13 @@ async def async_setup(hass, config):
 
 
 @Throttle(MIN_TIME_BETWEEN_UPDATES)
-async def update_data(hass, name):
+async def update_data(hass):
     """Update data."""
     # This is where the main logic to update platform data goes.
     try:
-        await hass.async_add_executor_job(hass.data[DOMAIN_DATA][name].update)
-        _LOGGER.debug("Updated: %s", hass.data[DOMAIN_DATA][name])
+        for k, v in hass.data[DOMAIN_DATA].items():
+            await hass.async_add_executor_job(v.update)
+            _LOGGER.debug("Updated: %s", hass.data[DOMAIN_DATA][k])
     except Exception as error:  # pylint: disable=broad-except
         _LOGGER.error("Could not update data - %s", error)
 
