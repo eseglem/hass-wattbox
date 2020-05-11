@@ -1,6 +1,20 @@
-# hass-wattbox
-Home Assistant WattBox Component
+[![GitHub Activity][commits-shield]][commits]
+[![License][license-shield]](LICENSE)
 
+[![hacs][hacsbadge]][hacs]
+![Project Maintenance][maintenance-shield]
+[![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
+
+[![Discord][discord-shield]][discord]
+[![Community Forum][forum-shield]][forum]
+
+# hass-wattbox
+
+_Home Assistant Component to integrate with [WattBox][wattbox]._
+
+Copy the custom_component folder into your config, as with any other custom component. Can also be instlled through HACS via a custom repository.
+
+Configuration through `configuration.yaml`, not available in UI at this time.
 
 Example Config:
 ```
@@ -21,6 +35,8 @@ wattbox:
   - power_value
   - voltage_value
 ```
+
+Note: Use with a second WattBox is experimental, at best. I do not have a second unit to test with and others have not had great luck.
 
 Configuration Options:
 
@@ -54,3 +70,21 @@ Be careful, if the WattBox controls the power to its own networking equipment yo
 
 Based on the Blueprint found at: https://github.com/custom-components/blueprint
 And the apcupsd component at: https://github.com/home-assistant/home-assistant/tree/dev/homeassistant/components/apcupsd
+
+<!---->
+
+***
+
+[wattbox]: https://www.snapav.com/shop/en/snapav/wattbox
+[buymecoffee]: https://www.buymeacoffee.com/eseglem
+[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow
+[commits-shield]: https://img.shields.io/github/last-commit/eseglem/hass-wattbox
+[commits]: https://github.com/eseglem/hass-wattbox/commits/master
+[discord]: https://discord.gg/Qa5fW2R
+[discord-shield]: https://img.shields.io/discord/330944238910963714
+[forum-shield]: https://img.shields.io/badge/community-forum-brightgreen
+[forum]: https://community.home-assistant.io/
+[license-shield]: https://img.shields.io/github/license/eseglem/hass-wattbox
+[maintenance-shield]: https://img.shields.io/badge/maintainer-Erik%20Seglem%20%40Bedon292-blue
+[hacs]: https://github.com/custom-components/hacs
+[hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange
