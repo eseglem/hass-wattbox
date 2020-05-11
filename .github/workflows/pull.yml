@@ -16,9 +16,6 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             CATEGORY: "integration"
 
-        - name: Hassfest validation
-          uses: "home-assistant/actions/hassfest@master"
-
   style:
     runs-on: "ubuntu-latest"
     name: Check style formatting
