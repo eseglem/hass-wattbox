@@ -2,6 +2,8 @@ default_config:
 
 wattbox:
   - host: !secret wattbox_ip
+    name: wattbox
+    scan_interval: 00:00:05
 
 logger:
   default: error

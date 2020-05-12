@@ -29,6 +29,7 @@ wattbox:
   name: [OPTIONAL: Default wattbox]
   username: [OPTIONAL: Default wattbox]
   password: [OPTIONAL: Default wattbox]
+  scan_interval: [OPTIONAL: Default 00:00:30]
 ```
 
 {% endif %}

@@ -11,6 +11,7 @@ from datetime import timedelta
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import discovery
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import Throttle
 from homeassistant.const import (
     CONF_HOST,
@@ -18,6 +19,7 @@ from homeassistant.const import (
     CONF_PASSWORD,
     CONF_PORT,
     CONF_RESOURCES,
+    CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
 
@@ -26,6 +28,7 @@ from .const import (
     DEFAULT_NAME,
     DEFAULT_PASSWORD,
     DEFAULT_PORT,
+    DEFAULT_SCAN_INTERVAL,
     DEFAULT_USER,
     DOMAIN_DATA,
     DOMAIN,
@@ -55,11 +58,12 @@ WATTBOX_HOST_SCHEMA = vol.Schema(
         vol.Optional(CONF_RESOURCES, default=ALL_SENSOR_TYPES): vol.All(
             cv.ensure_list, [vol.In(ALL_SENSOR_TYPES)]
         ),
+        vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): cv.time_period,
     }
 )
 
 CONFIG_SCHEMA = vol.Schema(
-    {DOMAIN: vol.All(cv.ensure_list, [WATTBOX_HOST_SCHEMA])}, extra=vol.ALLOW_EXTRA
+    {DOMAIN: vol.All(cv.ensure_list, [WATTBOX_HOST_SCHEMA]),}, extra=vol.ALLOW_EXTRA,
 )
 
 
@@ -77,6 +81,9 @@ async def async_setup(hass, config):
         return False
 
     hass.data[DOMAIN_DATA] = {}
+
+    async def scan_update_data(_):
+        await update_data(hass, name)
 
     for wattbox_host in config[DOMAIN]:
         # Create DATA dict
@@ -98,6 +105,12 @@ async def async_setup(hass, config):
                     hass, platform, DOMAIN, wattbox_host, config
                 )
             )
+
+        # Setup scheduled updates
+        scan_interval = wattbox_host.get(CONF_SCAN_INTERVAL)
+        async_track_time_interval(hass, scan_update_data, scan_interval)
+
+    # Extra logging to ensure the right outlets are set up.
     _LOGGER.debug(", ".join([str(v) for k, v in hass.data[DOMAIN_DATA].items()]))
     _LOGGER.debug(repr(hass.data[DOMAIN_DATA]))
     for k, v in hass.data[DOMAIN_DATA].items():
@@ -105,17 +118,17 @@ async def async_setup(hass, config):
         _LOGGER.debug("%s has %s outlets", wattbox, len(wattbox.outlets))
         for o in wattbox.outlets:
             _LOGGER.debug("Outlet: %s - %s", o, repr(o))
+
     return True
 
 
 @Throttle(MIN_TIME_BETWEEN_UPDATES)
-async def update_data(hass):
+async def update_data(hass, name):
     """Update data."""
     # This is where the main logic to update platform data goes.
     try:
-        for k, v in hass.data[DOMAIN_DATA].items():
-            await hass.async_add_executor_job(v.update)
-            _LOGGER.debug("Updated: %s", hass.data[DOMAIN_DATA][k])
+        await hass.async_add_executor_job(hass.data[DOMAIN_DATA][name].update)
+        _LOGGER.debug("Updated: %s", hass.data[DOMAIN_DATA][name])
     except Exception as error:  # pylint: disable=broad-except
         _LOGGER.error("Could not update data - %s", error)
 

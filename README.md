@@ -23,10 +23,12 @@ wattbox:
   name: wattbox1
   username: username1
   password: password1
+  scan_interval: 00:00:10
 - host: 192.168.1.101
   name: wattbox2
   username: username2
   password: password2
+  scan_interval: 00:00:20
   resources:
   - auto_reboot
   - mute
@@ -46,6 +48,7 @@ Configuration Options:
 * *password*: Password for authentication (Default wattbox)
 * *name*: Name for the WattBox (Default wattbox)
 * *resources*: A list of resources to enable (Default all of them)
+* *scan_interval*: A time interval run updates at (Default 30s, format HH:MM:SS)
 
 Resources:
 * audible_alarm

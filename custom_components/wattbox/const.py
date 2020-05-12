@@ -1,4 +1,6 @@
 """Constants for wattbox."""
+from datetime import timedelta
+
 from homeassistant.const import POWER_WATT
 
 # Base component constants
@@ -28,6 +30,7 @@ DEFAULT_NAME = "WattBox"
 DEFAULT_PASSWORD = DOMAIN
 DEFAULT_PORT = 80
 DEFAULT_USER = DOMAIN
+DEFAULT_SCAN_INTERVAL = timedelta(seconds=30)
 
 # TODO: Device Classes? None OK?
 BINARY_SENSOR_TYPES = {

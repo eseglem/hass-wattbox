@@ -42,7 +42,7 @@ class WattBoxBinarySensor(BinarySensorDevice):
     async def async_update(self):
         """Update the sensor."""
         # Send update "signal" to the component
-        await update_data(self.hass)
+        await update_data(self.hass, self.wattbox_name)
 
         # Get new data (if any)
         updated = self.hass.data[DOMAIN_DATA][self.wattbox_name]
