@@ -100,6 +100,11 @@ async def async_setup(hass, config):
             )
     _LOGGER.debug(", ".join([str(v) for k, v in hass.data[DOMAIN_DATA].items()]))
     _LOGGER.debug(repr(hass.data[DOMAIN_DATA]))
+    for k, v in hass.data[DOMAIN_DATA].items():
+        wattbox = hass.data[DOMAIN_DATA][k]
+        _LOGGER.debug("%s has %s outlets", wattbox, len(wattbox.outlets))
+        for o in wattbox.outlets:
+            _LOGGER.debug("Outlet: %s - %s", o, repr(o))
     return True
 
 

@@ -8,7 +8,7 @@
         "@eseglem"
     ],
     "requirements": [
-        "pywattbox>=0.2.0"
+        "pywattbox>=0.3.0"
     ],
     "hacs": "0.24.0"
 }

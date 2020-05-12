@@ -61,10 +61,20 @@ class WattBoxBinarySwitch(SwitchDevice):
             self.hass.data[DOMAIN_DATA][self.wattbox_name],
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index],
         )
+        _LOGGER.debug(
+            "Current Outlet Before: %s - %s",
+            self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].status,
+            repr(self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]),
+        )
         await self.hass.async_add_executor_job(
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_on
         )
         await self.async_update()
+        _LOGGER.debug(
+            "Current Outlet After: %s - %s",
+            self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].status,
+            repr(self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]),
+        )
 
     async def async_turn_off(self, **kwargs):  # pylint: disable=unused-argument
         """Turn off the switch."""
@@ -73,10 +83,20 @@ class WattBoxBinarySwitch(SwitchDevice):
             self.hass.data[DOMAIN_DATA][self.wattbox_name],
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index],
         )
+        _LOGGER.debug(
+            "Current Outlet Before: %s - %s",
+            self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].status,
+            repr(self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]),
+        )
         await self.hass.async_add_executor_job(
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_off
         )
         await self.async_update()
+        _LOGGER.debug(
+            "Current Outlet After: %s - %s",
+            self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].status,
+            repr(self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]),
+        )
 
     @property
     def name(self):
