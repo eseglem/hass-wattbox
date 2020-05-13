@@ -6,7 +6,7 @@ from homeassistant.const import POWER_WATT, TIME_MINUTES, VOLT, UNIT_PERCENTAGE
 # Base component constants
 DOMAIN = "wattbox"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.4.0"
+VERSION = "0.4.2"
 PLATFORMS = ["binary_sensor", "sensor", "switch"]
 REQUIRED_FILES = ["binary_sensor.py", "const.py", "sensor.py", "switch.py"]
 ISSUE_URL = "https://github.com/eseglem/hass-wattbox/issues"

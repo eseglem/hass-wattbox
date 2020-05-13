@@ -60,9 +60,13 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchDevice):
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].status,
             repr(self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]),
         )
+        # Update state first so it is not stale.
+        self._status = True
+        # Trigger the action on the wattbox.
         await self.hass.async_add_executor_job(
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_on
         )
+        # Trigger the update to get real state.
         await self.async_update()
         _LOGGER.debug(
             "Current Outlet After: %s - %s",
@@ -82,9 +86,13 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchDevice):
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].status,
             repr(self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]),
         )
+        # Update state first so it is not stale.
+        self._status = False
+        # Trigger the action on the wattbox.
         await self.hass.async_add_executor_job(
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_off
         )
+        # Trigger the update to get real state.
         await self.async_update()
         _LOGGER.debug(
             "Current Outlet After: %s - %s",
