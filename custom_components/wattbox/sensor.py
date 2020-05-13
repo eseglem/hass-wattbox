@@ -2,9 +2,8 @@
 import logging
 
 from homeassistant.const import CONF_NAME, CONF_RESOURCES
-from homeassistant.helpers.entity import Entity
 
-from . import update_data
+from . import WattBoxEntity
 from .const import DOMAIN_DATA, SENSOR_TYPES
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,33 +27,23 @@ async def async_setup_platform(
     async_add_entities(entities, True)
 
 
-class WattBoxSensor(Entity):
+class WattBoxSensor(WattBoxEntity):
     """WattBox Sensor class."""
 
     def __init__(self, hass, name, sensor_type):
-        self.hass = hass
-        self.attr = {}
+        super().__init__(hass, name, sensor_type)
         self.type = sensor_type
-        self.wattbox_name = name
         self._name = name + " " + SENSOR_TYPES[self.type][0]
         self._state = None
         self._unit = SENSOR_TYPES[self.type][1]
 
     async def async_update(self):
         """Update the sensor."""
-        # Send update "signal" to the component
-        await update_data(self.hass, self.wattbox_name)
-
         # Get new data (if any)
-        updated = self.hass.data[DOMAIN_DATA][self.wattbox_name]
+        wattbox = self.hass.data[DOMAIN_DATA][self.wattbox_name]
 
         # Check the data and update the value.
-        self._state = getattr(updated, self.type)
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
+        self._state = getattr(wattbox, self.type)
 
     @property
     def state(self):
@@ -65,11 +54,6 @@ class WattBoxSensor(Entity):
     def icon(self):
         """Return the icon of the sensor."""
         return SENSOR_TYPES[self.type][2]
-
-    @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
-        return self.attr
 
     @property
     def unit_of_measurement(self):

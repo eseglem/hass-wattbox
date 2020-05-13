@@ -11,7 +11,14 @@ from datetime import timedelta
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import discovery
+from homeassistant.core import callback
+from homeassistant.helpers.dispatcher import (
+    async_dispatcher_connect,
+    async_dispatcher_send,
+)
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import async_track_time_interval
+
 from homeassistant.util import Throttle
 from homeassistant.const import (
     CONF_HOST,
@@ -32,15 +39,14 @@ from .const import (
     DEFAULT_USER,
     DOMAIN_DATA,
     DOMAIN,
-    ISSUE_URL,
     PLATFORMS,
     REQUIRED_FILES,
     SENSOR_TYPES,
     STARTUP,
-    VERSION,
+    TOPIC_UPDATE,
 )
 
-REQUIREMENTS = ["pywattbox>=0.2.0"]
+REQUIREMENTS = ["pywattbox>=0.3.0"]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -72,8 +78,7 @@ async def async_setup(hass, config):
     from pywattbox import WattBox
 
     # Print startup message
-    startup = STARTUP.format(name=DOMAIN, version=VERSION, issueurl=ISSUE_URL)
-    _LOGGER.info(startup)
+    _LOGGER.info(STARTUP)
 
     # Check that all required files are present
     file_check = await check_files(hass)
@@ -113,8 +118,7 @@ async def async_setup(hass, config):
     # Extra logging to ensure the right outlets are set up.
     _LOGGER.debug(", ".join([str(v) for k, v in hass.data[DOMAIN_DATA].items()]))
     _LOGGER.debug(repr(hass.data[DOMAIN_DATA]))
-    for k, v in hass.data[DOMAIN_DATA].items():
-        wattbox = hass.data[DOMAIN_DATA][k]
+    for _, wattbox in hass.data[DOMAIN_DATA].items():
         _LOGGER.debug("%s has %s outlets", wattbox, len(wattbox.outlets))
         for o in wattbox.outlets:
             _LOGGER.debug("Outlet: %s - %s", o, repr(o))
@@ -129,6 +133,8 @@ async def update_data(hass, name):
     try:
         await hass.async_add_executor_job(hass.data[DOMAIN_DATA][name].update)
         _LOGGER.debug("Updated: %s", hass.data[DOMAIN_DATA][name])
+        # Send update to topic for entities to see
+        async_dispatcher_send(hass, TOPIC_UPDATE)
     except Exception as error:  # pylint: disable=broad-except
         _LOGGER.error("Could not update data - %s", error)
 
@@ -136,10 +142,10 @@ async def update_data(hass, name):
 async def check_files(hass):
     """Return bool that indicates if all files are present."""
     # Verify that the user downloaded all files.
-    base = "{}/custom_components/{}/".format(hass.config.path(), DOMAIN)
+    base = f"{hass.config.path()}/custom_components/{DOMAIN}"
     missing = []
     for file in REQUIRED_FILES:
-        fullpath = "{}{}".format(base, file)
+        fullpath = f"{base}/{file}"
         if not os.path.exists(fullpath):
             missing.append(file)
 
@@ -150,3 +156,43 @@ async def check_files(hass):
         returnvalue = True
 
     return returnvalue
+
+
+class WattBoxEntity(Entity):
+    def __init__(self, hass, name, *args):
+        self.hass = hass
+        self.attr = dict()
+        self.wattbox_name = name
+        self._name = ""
+
+    async def async_added_to_hass(self) -> None:
+        """Register callbacks."""
+
+        @callback
+        def update() -> None:
+            """Update the state."""
+            self.async_schedule_update_ha_state(True)
+
+        self._async_unsub_dispatcher_connect = async_dispatcher_connect(
+            self.hass, TOPIC_UPDATE, update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Disconnect dispatcher listener when removed."""
+        if self._async_unsub_dispatcher_connect:
+            self._async_unsub_dispatcher_connect()
+
+    @property
+    def name(self):
+        """Return the name of the switch."""
+        return self._name
+
+    @property
+    def device_state_attributes(self):
+        """Return the state attributes."""
+        return self.attr
+
+    @property
+    def should_poll(self) -> bool:
+        """Return true."""
+        return False

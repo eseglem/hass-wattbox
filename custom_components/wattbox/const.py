@@ -1,23 +1,23 @@
 """Constants for wattbox."""
 from datetime import timedelta
 
-from homeassistant.const import POWER_WATT
+from homeassistant.const import POWER_WATT, TIME_MINUTES, VOLT, UNIT_PERCENTAGE
 
 # Base component constants
 DOMAIN = "wattbox"
-DOMAIN_DATA = "{}_data".format(DOMAIN)
-VERSION = "0.3.0"
+DOMAIN_DATA = f"{DOMAIN}_data"
+VERSION = "0.4.0"
 PLATFORMS = ["binary_sensor", "sensor", "switch"]
 REQUIRED_FILES = ["binary_sensor.py", "const.py", "sensor.py", "switch.py"]
 ISSUE_URL = "https://github.com/eseglem/hass-wattbox/issues"
 
-STARTUP = """
+STARTUP = f"""
 -------------------------------------------------------------------
-{name}
-Version: {version}
+{DOMAIN}
+Version: {VERSION}
 This is a custom component
 If you have any issues with this you need to open an issue here:
-{issueurl}
+{ISSUE_URL}
 -------------------------------------------------------------------
 """
 
@@ -31,6 +31,8 @@ DEFAULT_PASSWORD = DOMAIN
 DEFAULT_PORT = 80
 DEFAULT_USER = DOMAIN
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=30)
+
+TOPIC_UPDATE = f"{DOMAIN}_data_update"
 
 # TODO: Device Classes? None OK?
 BINARY_SENSOR_TYPES = {
@@ -46,10 +48,10 @@ BINARY_SENSOR_TYPES = {
 }
 
 SENSOR_TYPES = {
-    "battery_charge": ["Battery Charge", "%", "mdi:gauge"],
-    "battery_load": ["Battery Load", "%", "mdi:gauge"],
+    "battery_charge": ["Battery Charge", UNIT_PERCENTAGE, "mdi:gauge"],
+    "battery_load": ["Battery Load", UNIT_PERCENTAGE, "mdi:gauge"],
     "current_value": ["Current", "A", "mdi:current-ac"],
-    "est_run_time": ["Estimated Run Time", "min", "mdi:update"],
+    "est_run_time": ["Estimated Run Time", TIME_MINUTES, "mdi:update"],
     "power_value": ["Power", POWER_WATT, "mdi:lightbulb-outline"],
-    "voltage_value": ["Voltage", "V", "mdi:flash-circle"],
+    "voltage_value": ["Voltage", VOLT, "mdi:flash-circle"],
 }

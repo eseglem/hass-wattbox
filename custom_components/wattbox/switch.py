@@ -4,7 +4,7 @@ import logging
 from homeassistant.components.switch import SwitchDevice
 from homeassistant.const import CONF_NAME
 
-from . import update_data
+from . import WattBoxEntity
 from .const import DOMAIN_DATA, PLUG_ICON
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,25 +26,19 @@ async def async_setup_platform(
     async_add_entities(entities, True)
 
 
-class WattBoxBinarySwitch(SwitchDevice):
+class WattBoxBinarySwitch(WattBoxEntity, SwitchDevice):
     """WattBox switch class."""
 
     def __init__(self, hass, name, index):
-        self.hass = hass
-        self.attr = {}
+        super().__init__(hass, name, index)
         self.index = index
-        self.wattbox_name = name
         self._status = False
         self._name = name + " Outlet " + str(index)
 
     async def async_update(self):
         """Update the sensor."""
-        # Send update "signal" to the component
-        await update_data(self.hass, self.wattbox_name)
-
         # Get new data (if any)
-        updated = self.hass.data[DOMAIN_DATA][self.wattbox_name]
-        outlet = updated.outlets[self.index]
+        outlet = self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]
 
         # Check the data and update the value.
         self._status = outlet.status
@@ -99,11 +93,6 @@ class WattBoxBinarySwitch(SwitchDevice):
         )
 
     @property
-    def name(self):
-        """Return the name of the switch."""
-        return self._name
-
-    @property
     def icon(self):
         """Return the icon of this switch."""
         return PLUG_ICON
@@ -112,11 +101,6 @@ class WattBoxBinarySwitch(SwitchDevice):
     def is_on(self):
         """Return true if the switch is on."""
         return self._status
-
-    @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
-        return self.attr
 
 
 class WattBoxMasterSwitch(WattBoxBinarySwitch):
