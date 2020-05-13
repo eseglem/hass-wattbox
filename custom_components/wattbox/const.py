@@ -32,7 +32,7 @@ DEFAULT_PORT = 80
 DEFAULT_USER = DOMAIN
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=30)
 
-TOPIC_UPDATE = f"{DOMAIN}_data_update"
+TOPIC_UPDATE = "{}_data_update_{}"
 
 # TODO: Device Classes? None OK?
 BINARY_SENSOR_TYPES = {

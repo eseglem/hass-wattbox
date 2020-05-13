@@ -4,9 +4,10 @@ Component to integrate with WattBox.
 For more details about this component, please refer to
 https://github.com/eseglem/hass-wattbox/
 """
-import os
 import logging
+import os
 from datetime import timedelta
+from functools import partial
 
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
@@ -19,7 +20,6 @@ from homeassistant.helpers.dispatcher import (
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import async_track_time_interval
 
-from homeassistant.util import Throttle
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
@@ -85,10 +85,7 @@ async def async_setup(hass, config):
     if not file_check:
         return False
 
-    hass.data[DOMAIN_DATA] = {}
-
-    async def scan_update_data(_):
-        await update_data(hass, name)
+    hass.data[DOMAIN_DATA] = dict()
 
     for wattbox_host in config[DOMAIN]:
         # Create DATA dict
@@ -111,9 +108,10 @@ async def async_setup(hass, config):
                 )
             )
 
-        # Setup scheduled updates
         scan_interval = wattbox_host.get(CONF_SCAN_INTERVAL)
-        async_track_time_interval(hass, scan_update_data, scan_interval)
+        async_track_time_interval(
+            hass, partial(scan_update_data, hass=hass, name=name), scan_interval
+        )
 
     # Extra logging to ensure the right outlets are set up.
     _LOGGER.debug(", ".join([str(v) for k, v in hass.data[DOMAIN_DATA].items()]))
@@ -126,15 +124,28 @@ async def async_setup(hass, config):
     return True
 
 
-@Throttle(MIN_TIME_BETWEEN_UPDATES)
+# Setup scheduled updates
+async def scan_update_data(_, hass, name):
+    _LOGGER.debug(
+        "Scan Update Data: %s - %s",
+        hass.data[DOMAIN_DATA][name],
+        repr(hass.data[DOMAIN_DATA][name]),
+    )
+    await update_data(hass, name)
+
+
 async def update_data(hass, name):
     """Update data."""
     # This is where the main logic to update platform data goes.
     try:
         await hass.async_add_executor_job(hass.data[DOMAIN_DATA][name].update)
-        _LOGGER.debug("Updated: %s", hass.data[DOMAIN_DATA][name])
+        _LOGGER.debug(
+            "Updated: %s - %s",
+            hass.data[DOMAIN_DATA][name],
+            repr(hass.data[DOMAIN_DATA][name]),
+        )
         # Send update to topic for entities to see
-        async_dispatcher_send(hass, TOPIC_UPDATE)
+        async_dispatcher_send(hass, TOPIC_UPDATE.format(DOMAIN, name))
     except Exception as error:  # pylint: disable=broad-except
         _LOGGER.error("Could not update data - %s", error)
 
@@ -164,6 +175,7 @@ class WattBoxEntity(Entity):
         self.attr = dict()
         self.wattbox_name = name
         self._name = ""
+        self.topic = TOPIC_UPDATE.format(DOMAIN, self.wattbox_name)
 
     async def async_added_to_hass(self) -> None:
         """Register callbacks."""
@@ -174,7 +186,7 @@ class WattBoxEntity(Entity):
             self.async_schedule_update_ha_state(True)
 
         self._async_unsub_dispatcher_connect = async_dispatcher_connect(
-            self.hass, TOPIC_UPDATE, update
+            self.hass, self.topic, update
         )
 
     async def async_will_remove_from_hass(self) -> None:

@@ -105,9 +105,5 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchDevice):
 
 class WattBoxMasterSwitch(WattBoxBinarySwitch):
     def __init__(self, hass, name):
-        self.hass = hass
-        self.attr = {}
-        self.index = 0
-        self.wattbox_name = name
-        self._status = False
+        super().__init__(hass, name, 0)
         self._name = name + " Master Switch"
