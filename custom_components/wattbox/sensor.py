@@ -3,8 +3,8 @@ import logging
 
 from homeassistant.const import CONF_NAME, CONF_RESOURCES
 
-from .entity import WattBoxEntity
 from .const import DOMAIN_DATA, SENSOR_TYPES
+from .entity import WattBoxEntity
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -1,14 +1,14 @@
 """Constants for wattbox."""
 from datetime import timedelta
 
-from homeassistant.const import POWER_WATT, TIME_MINUTES, VOLT, UNIT_PERCENTAGE
 from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_CONNECTIVITY,
-    DEVICE_CLASS_SOUND,
     DEVICE_CLASS_PLUG,
     DEVICE_CLASS_PROBLEM,
     DEVICE_CLASS_SAFETY,
+    DEVICE_CLASS_SOUND,
 )
+from homeassistant.const import POWER_WATT, TIME_MINUTES, UNIT_PERCENTAGE, VOLT
 
 # Base component constants
 DOMAIN = "wattbox"

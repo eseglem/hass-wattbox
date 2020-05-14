@@ -4,16 +4,10 @@ Component to integrate with WattBox.
 For more details about this component, please refer to
 https://github.com/eseglem/hass-wattbox/
 """
-import logging
-import os
 from datetime import timedelta
 from functools import partial
-
-import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers import discovery
-from homeassistant.helpers.dispatcher import async_dispatcher_send
-from homeassistant.helpers.event import async_track_time_interval
+import logging
+import os
 
 from homeassistant.const import (
     CONF_HOST,
@@ -24,6 +18,11 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
+from homeassistant.helpers import discovery
+import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.event import async_track_time_interval
+import voluptuous as vol
 
 from .const import (
     BINARY_SENSOR_TYPES,
@@ -32,8 +31,8 @@ from .const import (
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_USER,
-    DOMAIN_DATA,
     DOMAIN,
+    DOMAIN_DATA,
     PLATFORMS,
     REQUIRED_FILES,
     SENSOR_TYPES,

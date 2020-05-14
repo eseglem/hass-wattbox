@@ -4,8 +4,8 @@ import logging
 from homeassistant.components.switch import DEVICE_CLASS_OUTLET, SwitchDevice
 from homeassistant.const import CONF_NAME
 
-from .entity import WattBoxEntity
 from .const import DOMAIN_DATA, PLUG_ICON
+from .entity import WattBoxEntity
 
 _LOGGER = logging.getLogger(__name__)
 

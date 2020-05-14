@@ -1,6 +1,6 @@
 from homeassistant.core import callback
-from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN, TOPIC_UPDATE
 

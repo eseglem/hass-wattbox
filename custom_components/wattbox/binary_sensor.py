@@ -4,8 +4,8 @@ import logging
 from homeassistant.components.binary_sensor import BinarySensorDevice
 from homeassistant.const import CONF_NAME, CONF_RESOURCES
 
-from .entity import WattBoxEntity
 from .const import BINARY_SENSOR_TYPES, DOMAIN_DATA
+from .entity import WattBoxEntity
 
 _LOGGER = logging.getLogger(__name__)
 
