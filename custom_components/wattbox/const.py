@@ -6,7 +6,6 @@ from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_PLUG,
     DEVICE_CLASS_PROBLEM,
     DEVICE_CLASS_SAFETY,
-    DEVICE_CLASS_SOUND,
 )
 from homeassistant.const import POWER_WATT, TIME_MINUTES, UNIT_PERCENTAGE, VOLT
 
@@ -41,13 +40,8 @@ DEFAULT_SCAN_INTERVAL = timedelta(seconds=30)
 
 TOPIC_UPDATE = "{}_data_update_{}"
 
-# TODO: Device Classes? None OK?
 BINARY_SENSOR_TYPES = {
-    "audible_alarm": {
-        "name": "Audible Alarm",
-        "device_class": DEVICE_CLASS_SOUND,
-        "flipped": False,
-    },
+    "audible_alarm": {"name": "Audible Alarm", "device_class": None, "flipped": False},
     "auto_reboot": {"name": "Auto Reboot", "device_class": None, "flipped": False},
     "battery_health": {
         "name": "Battery Health",
