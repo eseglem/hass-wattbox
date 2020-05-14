@@ -4,7 +4,7 @@ import logging
 from homeassistant.components.switch import SwitchDevice
 from homeassistant.const import CONF_NAME
 
-from . import WattBoxEntity
+from .entity import WattBoxEntity
 from .const import DOMAIN_DATA, PLUG_ICON
 
 _LOGGER = logging.getLogger(__name__)
@@ -62,16 +62,10 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchDevice):
         )
         # Update state first so it is not stale.
         self._status = True
+        self.async_write_ha_state()
         # Trigger the action on the wattbox.
         await self.hass.async_add_executor_job(
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_on
-        )
-        # Trigger the update to get real state.
-        await self.async_update()
-        _LOGGER.debug(
-            "Current Outlet After: %s - %s",
-            self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].status,
-            repr(self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]),
         )
 
     async def async_turn_off(self, **kwargs):  # pylint: disable=unused-argument
@@ -88,16 +82,10 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchDevice):
         )
         # Update state first so it is not stale.
         self._status = False
+        self.async_write_ha_state()
         # Trigger the action on the wattbox.
         await self.hass.async_add_executor_job(
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_off
-        )
-        # Trigger the update to get real state.
-        await self.async_update()
-        _LOGGER.debug(
-            "Current Outlet After: %s - %s",
-            self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].status,
-            repr(self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]),
         )
 
     @property
