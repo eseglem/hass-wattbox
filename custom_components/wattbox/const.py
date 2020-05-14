@@ -13,7 +13,7 @@ from homeassistant.components.binary_sensor import (
 # Base component constants
 DOMAIN = "wattbox"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.4.3"
+VERSION = "0.4.4"
 PLATFORMS = ["binary_sensor", "sensor", "switch"]
 REQUIRED_FILES = ["binary_sensor.py", "const.py", "sensor.py", "switch.py"]
 ISSUE_URL = "https://github.com/eseglem/hass-wattbox/issues"
