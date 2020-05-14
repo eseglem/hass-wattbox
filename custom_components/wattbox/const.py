@@ -2,6 +2,13 @@
 from datetime import timedelta
 
 from homeassistant.const import POWER_WATT, TIME_MINUTES, VOLT, UNIT_PERCENTAGE
+from homeassistant.components.binary_sensor import (
+    DEVICE_CLASS_CONNECTIVITY,
+    DEVICE_CLASS_SOUND,
+    DEVICE_CLASS_PLUG,
+    DEVICE_CLASS_PROBLEM,
+    DEVICE_CLASS_SAFETY,
+)
 
 # Base component constants
 DOMAIN = "wattbox"
@@ -36,15 +43,31 @@ TOPIC_UPDATE = "{}_data_update_{}"
 
 # TODO: Device Classes? None OK?
 BINARY_SENSOR_TYPES = {
-    "audible_alarm": ["Audible Alarm", None],
-    "auto_reboot": ["Auto Reboot", None],
-    "battery_health": ["Battery Health", None],
-    "battery_test": ["Battery Test", None],
-    "cloud_status": ["Cloud Status", None],
-    "has_ups": ["Has UPS", None],
-    "mute": ["Mute", None],
-    "power_lost": ["Power Lost", None],
-    "safe_voltage_status": ["Safe Voltage Status", None],
+    "audible_alarm": {
+        "name": "Audible Alarm",
+        "device_class": DEVICE_CLASS_SOUND,
+        "flipped": False,
+    },
+    "auto_reboot": {"name": "Auto Reboot", "device_class": None, "flipped": False},
+    "battery_health": {
+        "name": "Battery Health",
+        "device_class": DEVICE_CLASS_PROBLEM,
+        "flipped": True,
+    },
+    "battery_test": {"name": "Battery Test", "device_class": None, "flipped": False},
+    "cloud_status": {
+        "name": "Cloud Status",
+        "device_class": DEVICE_CLASS_CONNECTIVITY,
+        "flipped": False,
+    },
+    "has_ups": {"name": "Has UPS", "device_class": None, "flipped": False},
+    "mute": {"name": "Mute", "device_class": None, "flipped": False},
+    "power_lost": {"name": "Power", "device_class": DEVICE_CLASS_PLUG, "flipped": True},
+    "safe_voltage_status": {
+        "name": "Safe Voltage Status",
+        "device_class": DEVICE_CLASS_SAFETY,
+        "flipped": True,
+    },
 }
 
 SENSOR_TYPES = {

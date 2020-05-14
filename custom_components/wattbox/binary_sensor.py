@@ -35,11 +35,11 @@ class WattBoxBinarySensor(WattBoxEntity, BinarySensorDevice):
         super().__init__(hass, name, sensor_type)
         self.type = sensor_type
         self._status = False
-        self._name = name + " " + BINARY_SENSOR_TYPES[sensor_type][0]
+        self._name = name + " " + BINARY_SENSOR_TYPES[sensor_type]["name"]
 
     async def async_update(self):
         """Update the sensor."""
-        # Get new data (if any)
+        # Get domain data
         wattbox = self.hass.data[DOMAIN_DATA][self.wattbox_name]
 
         # Check the data and update the value.
@@ -48,9 +48,9 @@ class WattBoxBinarySensor(WattBoxEntity, BinarySensorDevice):
     @property
     def device_class(self):
         """Return the class of this binary_sensor."""
-        return BINARY_SENSOR_TYPES[self.type][1]
+        return BINARY_SENSOR_TYPES[self.type]["device_class"]
 
     @property
     def is_on(self):
         """Return true if the binary_sensor is on."""
-        return self._status
+        return not self._status if BINARY_SENSOR_TYPES[self.type]["flipped"] else self._status

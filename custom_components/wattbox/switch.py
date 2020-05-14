@@ -1,7 +1,7 @@
 """Switch platform for blueprint."""
 import logging
 
-from homeassistant.components.switch import SwitchDevice
+from homeassistant.components.switch import DEVICE_CLASS_OUTLET, SwitchDevice
 from homeassistant.const import CONF_NAME
 
 from .entity import WattBoxEntity
@@ -97,6 +97,11 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchDevice):
     def is_on(self):
         """Return true if the switch is on."""
         return self._status
+
+    @property
+    def device_class(self):
+        """Return the class of this device, from component DEVICE_CLASSES."""
+        return DEVICE_CLASS_OUTLET
 
 
 class WattBoxMasterSwitch(WattBoxBinarySwitch):
