@@ -53,4 +53,8 @@ class WattBoxBinarySensor(WattBoxEntity, BinarySensorDevice):
     @property
     def is_on(self):
         """Return true if the binary_sensor is on."""
-        return not self._status if BINARY_SENSOR_TYPES[self.type]["flipped"] else self._status
+        return (
+            not self._status
+            if BINARY_SENSOR_TYPES[self.type]["flipped"]
+            else self._status
+        )
