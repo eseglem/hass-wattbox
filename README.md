@@ -12,9 +12,9 @@
 
 _Home Assistant Component to integrate with [WattBox][wattbox]._
 
-Copy the custom_component folder into your config, as with any other custom component. Can also be instlled through HACS via a custom repository.
+Easiest way to install this component is through [HACS][hacs].
 
-Configuration through `configuration.yaml`, not available in UI at this time.
+Configuration through `configuration.yaml`, not available in UI yet.
 
 Example Config:
 ```
@@ -37,8 +37,6 @@ wattbox:
   - power_value
   - voltage_value
 ```
-
-Note: Use with a second WattBox is experimental, at best. I do not have a second unit to test with and others have not had great luck.
 
 Configuration Options:
 
@@ -67,18 +65,19 @@ Resources:
 * power_value
 * voltage_value
 
-Master switch will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly.
+Master switch will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly. If ALL of the switches controlled by Master are on, then Master will be on. Otherwise it will be off.
 
 Be careful, if the WattBox controls the power to its own networking equipment you can turn it off and not have remote access until you fix it. You may even have to plug it in elsewhere to get back online and turn that outlet back on in HA.
 
-Based on the Blueprint found at: https://github.com/custom-components/blueprint
-And the apcupsd component at: https://github.com/home-assistant/home-assistant/tree/dev/homeassistant/components/apcupsd
+Based on [custom-components/blueprint][blueprint]
 
 <!---->
 
 ***
 
 [wattbox]: https://www.snapav.com/shop/en/snapav/wattbox
+[hacs]: https://hacs.xyz/
+[blueprint]: https://github.com/custom-
 [buymecoffee]: https://www.buymeacoffee.com/eseglem
 [buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow
 [commits-shield]: https://img.shields.io/github/last-commit/eseglem/hass-wattbox
