@@ -1,7 +1,7 @@
 """Binary sensor platform for wattbox."""
 import logging
 
-from homeassistant.components.binary_sensor import BinarySensorDevice
+from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.const import CONF_NAME, CONF_RESOURCES
 
 from .const import BINARY_SENSOR_TYPES, DOMAIN_DATA
@@ -28,7 +28,7 @@ async def async_setup_platform(
     async_add_entities(entities, True)
 
 
-class WattBoxBinarySensor(WattBoxEntity, BinarySensorDevice):
+class WattBoxBinarySensor(WattBoxEntity, BinarySensorEntity):
     """WattBox binary_sensor class."""
 
     def __init__(self, hass, name, sensor_type):

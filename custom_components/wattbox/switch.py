@@ -1,7 +1,7 @@
 """Switch platform for blueprint."""
 import logging
 
-from homeassistant.components.switch import DEVICE_CLASS_OUTLET, SwitchDevice
+from homeassistant.components.switch import DEVICE_CLASS_OUTLET, SwitchEntity
 from homeassistant.const import CONF_NAME
 
 from .const import DOMAIN_DATA, PLUG_ICON
@@ -26,7 +26,7 @@ async def async_setup_platform(
     async_add_entities(entities, True)
 
 
-class WattBoxBinarySwitch(WattBoxEntity, SwitchDevice):
+class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
     """WattBox switch class."""
 
     def __init__(self, hass, name, index):
