@@ -98,7 +98,7 @@ async def async_setup(hass, config):
             # Get platform specific configuration
             hass.async_create_task(
                 discovery.async_load_platform(
-                    hass, platform, DOMAIN, wattbox_host, config
+                    hass, platform, DOMAIN, wattbox_host.name, config
                 )
             )
 
