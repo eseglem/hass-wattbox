@@ -97,7 +97,9 @@ async def async_setup(hass, config):
         for platform in PLATFORMS:
             # Get platform specific configuration
             hass.async_create_task(
-                discovery.async_load_platform(hass, platform, DOMAIN, name, config)
+                discovery.async_load_platform(
+                    hass, platform, DOMAIN, wattbox_host, config
+                )
             )
 
         scan_interval = wattbox_host.get(CONF_SCAN_INTERVAL)
