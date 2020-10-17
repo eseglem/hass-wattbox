@@ -7,7 +7,7 @@ from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_PROBLEM,
     DEVICE_CLASS_SAFETY,
 )
-from homeassistant.const import POWER_WATT, TIME_MINUTES, UNIT_PERCENTAGE, VOLT
+from homeassistant.const import POWER_WATT, TIME_MINUTES, PERCENTAGE, VOLT
 
 # Base component constants
 DOMAIN = "wattbox"
@@ -65,8 +65,8 @@ BINARY_SENSOR_TYPES = {
 }
 
 SENSOR_TYPES = {
-    "battery_charge": ["Battery Charge", UNIT_PERCENTAGE, "mdi:gauge"],
-    "battery_load": ["Battery Load", UNIT_PERCENTAGE, "mdi:gauge"],
+    "battery_charge": ["Battery Charge", PERCENTAGE, "mdi:gauge"],
+    "battery_load": ["Battery Load", PERCENTAGE, "mdi:gauge"],
     "current_value": ["Current", "A", "mdi:current-ac"],
     "est_run_time": ["Estimated Run Time", TIME_MINUTES, "mdi:update"],
     "power_value": ["Power", POWER_WATT, "mdi:lightbulb-outline"],

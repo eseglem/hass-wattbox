@@ -17,6 +17,8 @@ from homeassistant.const import (
     CONF_RESOURCES,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
+    PERCENTAGE,
+
 )
 from homeassistant.helpers import discovery
 import homeassistant.helpers.config_validation as cv
