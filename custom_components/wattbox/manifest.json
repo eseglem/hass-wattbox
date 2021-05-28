@@ -5,6 +5,7 @@
     "issue_tracker": "https://github.com/eseglem/hass-wattbox/issues",
     "documentation": "https://github.com/eseglem/hass-wattbox",
     "dependencies": [],
+    "iot_class": "local_push"
     "codeowners": [
         "@eseglem"
     ],
