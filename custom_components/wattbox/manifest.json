@@ -1,7 +1,7 @@
 {
     "domain": "wattbox",
     "name": "WattBox",
-    "version": "6.2",
+    "version": "0.7.0",
     "issue_tracker": "https://github.com/eseglem/hass-wattbox/issues",
     "documentation": "https://github.com/eseglem/hass-wattbox",
     "dependencies": [],
