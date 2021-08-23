@@ -7,7 +7,7 @@ from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_PROBLEM,
     DEVICE_CLASS_SAFETY,
 )
-from homeassistant.const import POWER_WATT, TIME_MINUTES, PERCENTAGE, VOLT
+from homeassistant.const import POWER_WATT, TIME_MINUTES, PERCENTAGE, ELECTRIC_POTENTIAL_VOLT
 
 # Base component constants
 DOMAIN = "wattbox"
@@ -70,5 +70,5 @@ SENSOR_TYPES = {
     "current_value": ["Current", "A", "mdi:current-ac"],
     "est_run_time": ["Estimated Run Time", TIME_MINUTES, "mdi:update"],
     "power_value": ["Power", POWER_WATT, "mdi:lightbulb-outline"],
-    "voltage_value": ["Voltage", VOLT, "mdi:flash-circle"],
+    "voltage_value": ["Voltage", ELECTRIC_POTENTIAL_VOLT, "mdi:flash-circle"],
 }
