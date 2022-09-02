@@ -9,7 +9,7 @@ wattbox:
     scan_interval: 00:00:05
 
 logger:
-  default: error
+  default: info
   logs:
     custom_components.wattbox: debug
 
