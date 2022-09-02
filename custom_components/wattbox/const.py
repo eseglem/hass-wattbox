@@ -1,4 +1,5 @@
 """Constants for wattbox."""
+
 from datetime import timedelta
 
 from homeassistant.components.binary_sensor import (
@@ -7,12 +8,17 @@ from homeassistant.components.binary_sensor import (
     DEVICE_CLASS_PROBLEM,
     DEVICE_CLASS_SAFETY,
 )
-from homeassistant.const import POWER_WATT, TIME_MINUTES, PERCENTAGE, ELECTRIC_POTENTIAL_VOLT
+from homeassistant.const import (
+    ELECTRIC_POTENTIAL_VOLT,
+    PERCENTAGE,
+    POWER_WATT,
+    TIME_MINUTES,
+)
 
 # Base component constants
 DOMAIN = "wattbox"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.7.1"
+VERSION = "0.8.0"
 PLATFORMS = ["binary_sensor", "sensor", "switch"]
 REQUIRED_FILES = ["binary_sensor.py", "const.py", "sensor.py", "switch.py"]
 ISSUE_URL = "https://github.com/eseglem/hass-wattbox/issues"

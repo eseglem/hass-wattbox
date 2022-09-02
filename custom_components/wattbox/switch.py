@@ -1,4 +1,5 @@
-"""Switch platform for blueprint."""
+"""Switch platform for wattbox."""
+
 import logging
 
 from homeassistant.components.switch import DEVICE_CLASS_OUTLET, SwitchEntity
@@ -105,6 +106,8 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
 
 
 class WattBoxMasterSwitch(WattBoxBinarySwitch):
+    """WattBox master switch class."""
+
     def __init__(self, hass, name):
         super().__init__(hass, name, 0)
         self._name = name + " Master Switch"

@@ -1,14 +1,16 @@
 """
-Component to integrate with WattBox.
+Component to integrate with wattbox.
 
 For more details about this component, please refer to
 https://github.com/eseglem/hass-wattbox/
 """
-from datetime import timedelta
-from functools import partial
 import logging
 import os
+from datetime import timedelta
+from functools import partial
 
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
@@ -17,14 +19,10 @@ from homeassistant.const import (
     CONF_RESOURCES,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
-    PERCENTAGE,
-
 )
 from homeassistant.helpers import discovery
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
-import voluptuous as vol
 
 from .const import (
     BINARY_SENSOR_TYPES,
@@ -42,7 +40,7 @@ from .const import (
     TOPIC_UPDATE,
 )
 
-REQUIREMENTS = ["pywattbox>=0.3.0"]
+REQUIREMENTS = ["pywattbox>=0.4.0"]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,7 +63,10 @@ WATTBOX_HOST_SCHEMA = vol.Schema(
 )
 
 CONFIG_SCHEMA = vol.Schema(
-    {DOMAIN: vol.All(cv.ensure_list, [WATTBOX_HOST_SCHEMA]),}, extra=vol.ALLOW_EXTRA,
+    {
+        DOMAIN: vol.All(cv.ensure_list, [WATTBOX_HOST_SCHEMA]),
+    },
+    extra=vol.ALLOW_EXTRA,
 )
 
 
@@ -122,6 +123,8 @@ async def async_setup(hass, config):
 
 # Setup scheduled updates
 async def scan_update_data(_, hass, name):
+    """Scan update data wrapper."""
+
     _LOGGER.debug(
         "Scan Update Data: %s - %s",
         hass.data[DOMAIN_DATA][name],
@@ -132,6 +135,7 @@ async def scan_update_data(_, hass, name):
 
 async def update_data(hass, name):
     """Update data."""
+
     # This is where the main logic to update platform data goes.
     try:
         await hass.async_add_executor_job(hass.data[DOMAIN_DATA][name].update)
@@ -148,6 +152,7 @@ async def update_data(hass, name):
 
 async def check_files(hass):
     """Return bool that indicates if all files are present."""
+
     # Verify that the user downloaded all files.
     base = f"{hass.config.path()}/custom_components/{DOMAIN}"
     missing = []

@@ -1,4 +1,5 @@
 """Binary sensor platform for wattbox."""
+
 import logging
 
 from homeassistant.components.binary_sensor import BinarySensorEntity

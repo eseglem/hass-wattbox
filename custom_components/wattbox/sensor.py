@@ -1,4 +1,5 @@
 """Sensor platform for wattbox."""
+
 import logging
 
 from homeassistant.const import CONF_NAME, CONF_RESOURCES

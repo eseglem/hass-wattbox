@@ -1,3 +1,5 @@
+"""Base Entity component for wattbox."""
+
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
@@ -6,6 +8,8 @@ from .const import DOMAIN, TOPIC_UPDATE
 
 
 class WattBoxEntity(Entity):
+    """WattBox Entity class."""
+
     def __init__(self, hass, name, *args):
         self.hass = hass
         self.attr = dict()
@@ -27,7 +31,7 @@ class WattBoxEntity(Entity):
 
     async def async_will_remove_from_hass(self) -> None:
         """Disconnect dispatcher listener when removed."""
-        if self._async_unsub_dispatcher_connect:
+        if hasattr(self, "_async_unsub_dispatcher_connect"):
             self._async_unsub_dispatcher_connect()
 
     @property
