@@ -6,8 +6,9 @@ https://github.com/eseglem/hass-wattbox/
 """
 import logging
 import os
-from datetime import timedelta
+from datetime import datetime
 from functools import partial
+from typing import Final, List
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -20,9 +21,11 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     BINARY_SENSOR_TYPES,
@@ -40,13 +43,11 @@ from .const import (
     TOPIC_UPDATE,
 )
 
-REQUIREMENTS = ["pywattbox>=0.4.0"]
+REQUIREMENTS: Final[List[str]] = ["pywattbox>=0.4.0"]
 
 _LOGGER = logging.getLogger(__name__)
 
-MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=1)
-
-ALL_SENSOR_TYPES = list({**BINARY_SENSOR_TYPES, **SENSOR_TYPES}.keys())
+ALL_SENSOR_TYPES: Final[List[str]] = [*BINARY_SENSOR_TYPES.keys(), *SENSOR_TYPES.keys()]
 
 WATTBOX_HOST_SCHEMA = vol.Schema(
     {
@@ -70,9 +71,9 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
-async def async_setup(hass, config):
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up this component."""
-    from pywattbox import WattBox
+    from pywattbox import WattBox  # pylint: disable=import-outside-toplevel
 
     # Print startup message
     _LOGGER.info(STARTUP)
@@ -85,6 +86,7 @@ async def async_setup(hass, config):
     hass.data[DOMAIN_DATA] = dict()
 
     for wattbox_host in config[DOMAIN]:
+        _LOGGER.debug(repr(wattbox_host))
         # Create DATA dict
         host = wattbox_host.get(CONF_HOST)
         password = wattbox_host.get(CONF_PASSWORD)
@@ -107,33 +109,21 @@ async def async_setup(hass, config):
 
         scan_interval = wattbox_host.get(CONF_SCAN_INTERVAL)
         async_track_time_interval(
-            hass, partial(scan_update_data, hass=hass, name=name), scan_interval
+            hass, partial(update_data, hass=hass, name=name), scan_interval
         )
 
     # Extra logging to ensure the right outlets are set up.
-    _LOGGER.debug(", ".join([str(v) for k, v in hass.data[DOMAIN_DATA].items()]))
+    _LOGGER.debug(", ".join([str(v) for _, v in hass.data[DOMAIN_DATA].items()]))
     _LOGGER.debug(repr(hass.data[DOMAIN_DATA]))
     for _, wattbox in hass.data[DOMAIN_DATA].items():
         _LOGGER.debug("%s has %s outlets", wattbox, len(wattbox.outlets))
-        for o in wattbox.outlets:
-            _LOGGER.debug("Outlet: %s - %s", o, repr(o))
+        for outlet in wattbox.outlets:
+            _LOGGER.debug("Outlet: %s - %s", outlet, repr(outlet))
 
     return True
 
 
-# Setup scheduled updates
-async def scan_update_data(_, hass, name):
-    """Scan update data wrapper."""
-
-    _LOGGER.debug(
-        "Scan Update Data: %s - %s",
-        hass.data[DOMAIN_DATA][name],
-        repr(hass.data[DOMAIN_DATA][name]),
-    )
-    await update_data(hass, name)
-
-
-async def update_data(hass, name):
+async def update_data(_: datetime, hass: HomeAssistant, name: str) -> None:
     """Update data."""
 
     # This is where the main logic to update platform data goes.
@@ -150,7 +140,7 @@ async def update_data(hass, name):
         _LOGGER.error("Could not update data - %s", error)
 
 
-async def check_files(hass):
+async def check_files(hass: HomeAssistant) -> bool:
     """Return bool that indicates if all files are present."""
 
     # Verify that the user downloaded all files.
@@ -163,8 +153,5 @@ async def check_files(hass):
 
     if missing:
         _LOGGER.critical("The following files are missing: %s", str(missing))
-        returnvalue = False
-    else:
-        returnvalue = True
-
-    return returnvalue
+        return False
+    return True

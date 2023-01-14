@@ -1,9 +1,13 @@
 """Switch platform for wattbox."""
 
 import logging
+from typing import Final, List
 
-from homeassistant.components.switch import DEVICE_CLASS_OUTLET, SwitchEntity
+from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.const import CONF_NAME
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .const import DOMAIN_DATA, PLUG_ICON
 from .entity import WattBoxEntity
@@ -11,14 +15,17 @@ from .entity import WattBoxEntity
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(
-    hass, config, async_add_entities, discovery_info=None
-):  # pylint: disable=unused-argument
+async def async_setup_platform(  # pylint: disable=unused-argument
+    hass: HomeAssistant,
+    config: ConfigType,
+    async_add_entities: AddEntitiesCallback,
+    discovery_info: DiscoveryInfoType,
+) -> None:
     """Setup switch platform."""
-    name = discovery_info[CONF_NAME]
-    entities = []
+    name: str = discovery_info[CONF_NAME]
+    entities: List[WattBoxEntity] = []
 
-    num_switches = hass.data[DOMAIN_DATA][name].number_outlets
+    num_switches: int = hass.data[DOMAIN_DATA][name].number_outlets
 
     entities.append(WattBoxMasterSwitch(hass, name))
     for i in range(1, num_switches + 1):
@@ -30,11 +37,12 @@ async def async_setup_platform(
 class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
     """WattBox switch class."""
 
-    def __init__(self, hass, name, index):
+    _attr_device_class: Final[str] = SwitchDeviceClass.OUTLET
+
+    def __init__(self, hass: HomeAssistant, name: str, index: int):
         super().__init__(hass, name, index)
-        self.index = index
-        self._status = False
-        self._name = name + " Outlet " + str(index)
+        self.index: int = index
+        self._attr_name = name + " Outlet " + str(index)
 
     async def async_update(self):
         """Update the sensor."""
@@ -42,14 +50,14 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         outlet = self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]
 
         # Check the data and update the value.
-        self._status = outlet.status
+        self._attr_is_on = outlet.status
 
         # Set/update attributes
-        self.attr["name"] = outlet.name
-        self.attr["method"] = outlet.method
-        self.attr["index"] = outlet.index
+        self._attr_extra_state_attributes["name"] = outlet.name
+        self._attr_extra_state_attributes["method"] = outlet.method
+        self._attr_extra_state_attributes["index"] = outlet.index
 
-    async def async_turn_on(self, **kwargs):  # pylint: disable=unused-argument
+    async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument
         """Turn on the switch."""
         _LOGGER.debug(
             "Turning On: %s - %s",
@@ -62,14 +70,14 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
             repr(self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]),
         )
         # Update state first so it is not stale.
-        self._status = True
+        self._attr_is_on = True
         self.async_write_ha_state()
         # Trigger the action on the wattbox.
         await self.hass.async_add_executor_job(
             self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_on
         )
 
-    async def async_turn_off(self, **kwargs):  # pylint: disable=unused-argument
+    async def async_turn_off(self, **kwargs) -> None:  # pylint: disable=unused-argument
         """Turn off the switch."""
         _LOGGER.debug(
             "Turning Off: %s - %s",
@@ -82,7 +90,7 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
             repr(self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]),
         )
         # Update state first so it is not stale.
-        self._status = False
+        self._attr_is_on = False
         self.async_write_ha_state()
         # Trigger the action on the wattbox.
         await self.hass.async_add_executor_job(
@@ -90,24 +98,14 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         )
 
     @property
-    def icon(self):
+    def icon(self) -> str | None:
         """Return the icon of this switch."""
         return PLUG_ICON
-
-    @property
-    def is_on(self):
-        """Return true if the switch is on."""
-        return self._status
-
-    @property
-    def device_class(self):
-        """Return the class of this device, from component DEVICE_CLASSES."""
-        return DEVICE_CLASS_OUTLET
 
 
 class WattBoxMasterSwitch(WattBoxBinarySwitch):
     """WattBox master switch class."""
 
-    def __init__(self, hass, name):
+    def __init__(self, hass: HomeAssistant, name: str) -> None:
         super().__init__(hass, name, 0)
-        self._name = name + " Master Switch"
+        self._attr_name = name + " Master Switch"

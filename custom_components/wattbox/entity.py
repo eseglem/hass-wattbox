@@ -1,6 +1,7 @@
 """Base Entity component for wattbox."""
+from typing import Any, Callable, Dict, Literal
 
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
 
@@ -10,12 +11,16 @@ from .const import DOMAIN, TOPIC_UPDATE
 class WattBoxEntity(Entity):
     """WattBox Entity class."""
 
-    def __init__(self, hass, name, *args):
+    _async_unsub_dispatcher_connect: Callable
+    _attr_should_poll: Literal[False] = False
+
+    def __init__(  # pylint: disable=unused-argument
+        self, hass: HomeAssistant, name: str, *args
+    ) -> None:
         self.hass = hass
-        self.attr = dict()
-        self.wattbox_name = name
-        self._name = ""
-        self.topic = TOPIC_UPDATE.format(DOMAIN, self.wattbox_name)
+        self._attr_extra_state_attributes: Dict[str, Any] = dict()
+        self.wattbox_name: str = name
+        self.topic: str = TOPIC_UPDATE.format(DOMAIN, self.wattbox_name)
 
     async def async_added_to_hass(self) -> None:
         """Register callbacks."""
@@ -33,18 +38,3 @@ class WattBoxEntity(Entity):
         """Disconnect dispatcher listener when removed."""
         if hasattr(self, "_async_unsub_dispatcher_connect"):
             self._async_unsub_dispatcher_connect()
-
-    @property
-    def name(self):
-        """Return the name of the switch."""
-        return self._name
-
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        return self.attr
-
-    @property
-    def should_poll(self) -> bool:
-        """Return true."""
-        return False
