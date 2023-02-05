@@ -1,0 +1,21 @@
+[tool.black]
+target-version = ["py38"]
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff]
+target-version = ["py38"]
+select = [
+    "F",  # pyflakes
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "YTT",  # flake8-2020
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+]
+# Never enforce `E501` (line length violations). Black handles it.
+ignore = ["E501"]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]

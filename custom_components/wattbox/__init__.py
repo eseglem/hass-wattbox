@@ -43,7 +43,7 @@ from .const import (
     TOPIC_UPDATE,
 )
 
-REQUIREMENTS: Final[List[str]] = ["pywattbox>=0.4.0"]
+REQUIREMENTS: Final[List[str]] = ["pywattbox>=0.5.0"]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -73,7 +73,9 @@ CONFIG_SCHEMA = vol.Schema(
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up this component."""
-    from pywattbox import WattBox  # pylint: disable=import-outside-toplevel
+    from pywattbox import (
+        async_create_http_wattbox,
+    )  # pylint: disable=import-outside-toplevel
 
     # Print startup message
     _LOGGER.info(STARTUP)
@@ -94,8 +96,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         username = wattbox_host.get(CONF_USERNAME)
         name = wattbox_host.get(CONF_NAME)
 
-        hass.data[DOMAIN_DATA][name] = await hass.async_add_executor_job(
-            WattBox, host, port, username, password
+        hass.data[DOMAIN_DATA][name] = await async_create_http_wattbox(
+            host=host, user=username, password=password, port=port
         )
 
         # Load platforms
