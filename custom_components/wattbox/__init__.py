@@ -97,7 +97,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         username = wattbox_host.get(CONF_USERNAME)
         name = wattbox_host.get(CONF_NAME)
 
-        if port in (21, 22):
+        if port in (22, 23):
             hass.data[DOMAIN_DATA][name] = await async_create_ip_wattbox(
                 host=host, user=username, password=password, port=port
             )
