@@ -75,6 +75,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up this component."""
     from pywattbox import (
         async_create_http_wattbox,
+        async_create_ip_wattbox,
     )  # pylint: disable=import-outside-toplevel
 
     # Print startup message
@@ -96,9 +97,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         username = wattbox_host.get(CONF_USERNAME)
         name = wattbox_host.get(CONF_NAME)
 
-        hass.data[DOMAIN_DATA][name] = await async_create_http_wattbox(
-            host=host, user=username, password=password, port=port
-        )
+        if port in (21, 22):
+            hass.data[DOMAIN_DATA][name] = await async_create_ip_wattbox(
+                host=host, user=username, password=password, port=port
+            )
+        else:
+            hass.data[DOMAIN_DATA][name] = await async_create_http_wattbox(
+                host=host, user=username, password=password, port=port
+            )
 
         # Load platforms
         for platform in PLATFORMS:
