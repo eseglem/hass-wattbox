@@ -73,9 +73,9 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         self._attr_is_on = True
         self.async_write_ha_state()
         # Trigger the action on the wattbox.
-        await self.hass.async_add_executor_job(
-            self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_on
-        )
+        await self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[
+            self.index
+        ].async_turn_on()
 
     async def async_turn_off(self, **kwargs) -> None:  # pylint: disable=unused-argument
         """Turn off the switch."""
@@ -93,9 +93,9 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         self._attr_is_on = False
         self.async_write_ha_state()
         # Trigger the action on the wattbox.
-        await self.hass.async_add_executor_job(
-            self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index].turn_off
-        )
+        await self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[
+            self.index
+        ].async_turn_off()
 
     @property
     def icon(self) -> str | None:
