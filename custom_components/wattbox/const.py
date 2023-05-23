@@ -16,17 +16,9 @@ DOMAIN: Final[str] = "wattbox"
 DOMAIN_DATA: Final[str] = f"{DOMAIN}_data"
 VERSION: Final[str] = "0.8.1"
 PLATFORMS: Final[List[str]] = ["binary_sensor", "sensor", "switch"]
-REQUIRED_FILES: Final[List[str]] = [
-    "binary_sensor.py",
-    "const.py",
-    "sensor.py",
-    "switch.py",
-]
 ISSUE_URL: Final[str] = "https://github.com/eseglem/hass-wattbox/issues"
 
-STARTUP: Final[
-    str
-] = f"""
+STARTUP: Final[str] = f"""
 -------------------------------------------------------------------
 {DOMAIN}
 Version: {VERSION}

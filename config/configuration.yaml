@@ -16,3 +16,10 @@ logger:
   default: info
   logs:
     custom_components.wattbox: debug
+
+sensor:
+  - platform: integration
+    source: sensor.wattbox_power
+    name: wattbox_energy_spent
+    unit_prefix: k
+    round: 2

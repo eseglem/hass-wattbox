@@ -37,7 +37,6 @@ from .const import (
     DOMAIN,
     DOMAIN_DATA,
     PLATFORMS,
-    REQUIRED_FILES,
     SENSOR_TYPES,
     STARTUP,
     TOPIC_UPDATE,
@@ -73,20 +72,15 @@ CONFIG_SCHEMA = vol.Schema(
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up this component."""
-    from pywattbox import (
+    from pywattbox import ( # pylint: disable=import-outside-toplevel
         async_create_http_wattbox,
         async_create_ip_wattbox,
-    )  # pylint: disable=import-outside-toplevel
+    )
 
     # Print startup message
     _LOGGER.info(STARTUP)
 
-    # Check that all required files are present
-    file_check = await check_files(hass)
-    if not file_check:
-        return False
-
-    hass.data[DOMAIN_DATA] = dict()
+    hass.data[DOMAIN_DATA] = {}
 
     for wattbox_host in config[DOMAIN]:
         _LOGGER.debug(repr(wattbox_host))
@@ -146,20 +140,3 @@ async def update_data(_: datetime, hass: HomeAssistant, name: str) -> None:
         async_dispatcher_send(hass, TOPIC_UPDATE.format(DOMAIN, name))
     except Exception as error:  # pylint: disable=broad-except
         _LOGGER.error("Could not update data - %s", error)
-
-
-async def check_files(hass: HomeAssistant) -> bool:
-    """Return bool that indicates if all files are present."""
-
-    # Verify that the user downloaded all files.
-    base = f"{hass.config.path()}/custom_components/{DOMAIN}"
-    missing = []
-    for file in REQUIRED_FILES:
-        fullpath = f"{base}/{file}"
-        if not os.path.exists(fullpath):
-            missing.append(file)
-
-    if missing:
-        _LOGGER.critical("The following files are missing: %s", str(missing))
-        return False
-    return True

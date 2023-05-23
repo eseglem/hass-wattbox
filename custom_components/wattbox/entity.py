@@ -18,7 +18,7 @@ class WattBoxEntity(Entity):
         self, hass: HomeAssistant, name: str, *args
     ) -> None:
         self.hass = hass
-        self._attr_extra_state_attributes: Dict[str, Any] = dict()
+        self._attr_extra_state_attributes: Dict[str, Any] = {}
         self.wattbox_name: str = name
         self.topic: str = TOPIC_UPDATE.format(DOMAIN, self.wattbox_name)
 

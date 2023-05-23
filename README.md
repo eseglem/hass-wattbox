@@ -69,7 +69,7 @@ Master switch will turn on / off all the switches that the physical switch on th
 
 Be careful, if the WattBox controls the power to its own networking equipment you can turn it off and not have remote access until you fix it. You may even have to plug it in elsewhere to get back online and turn that outlet back on in HA.
 
-Based on [custom-components/integration_blueprint][blueprint]
+Based on [integration_blueprint template][blueprint]
 
 <!---->
 
@@ -77,7 +77,7 @@ Based on [custom-components/integration_blueprint][blueprint]
 
 [wattbox]: https://www.snapav.com/shop/en/snapav/wattbox
 [hacs]: https://hacs.xyz/
-[blueprint]: https://github.com/custom-components/integration_blueprint
+[blueprint]: https://github.com/ludeeus/integration_blueprint
 [buymecoffee]: https://www.buymeacoffee.com/eseglem
 [buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow
 [commits-shield]: https://img.shields.io/github/last-commit/eseglem/hass-wattbox
