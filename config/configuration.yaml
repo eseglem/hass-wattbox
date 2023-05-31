@@ -1,25 +1,21 @@
 default_config:
 
 wattbox:
-  - host: !secret wattbox_ip
-    name: wattbox
-    scan_interval: 00:00:05
-    username: !secret wattbox_username
-    password: !secret wattbox_password
-  # - host: !secret wattbox_ip
-  #   name: wattbox2
-  #   scan_interval: 00:00:05
-  #   username: !secret wattbox_username
-  #   password: !secret wattbox_password
+  - host: !secret wattbox1_ip
+    name: wattbox1
+    scan_interval: 00:00:30
+    username: !secret wattbox1_username
+    password: !secret wattbox1_password
+  - host: !secret wattbox2_ip
+    name: wattbox2
+    scan_interval: 00:00:30
+    port: 22
+    username: !secret wattbox2_username
+    password: !secret wattbox2_password
 
 logger:
-  default: info
+  default: warning
   logs:
     custom_components.wattbox: debug
-
-sensor:
-  - platform: integration
-    source: sensor.wattbox_power
-    name: wattbox_energy_spent
-    unit_prefix: k
-    round: 2
+    pywattbox: debug
+    scrapli: debug

@@ -32,7 +32,7 @@ async def async_setup_platform(  # pylint: disable=unused-argument
 
         entities.append(WattBoxBinarySensor(hass, name, sensor_type))
 
-    async_add_entities(entities, True)
+    async_add_entities(entities)
 
 
 class WattBoxBinarySensor(WattBoxEntity, BinarySensorEntity):
@@ -42,7 +42,7 @@ class WattBoxBinarySensor(WattBoxEntity, BinarySensorEntity):
         super().__init__(hass, name, sensor_type)
         self.type: str = sensor_type
         self.flipped: bool = BINARY_SENSOR_TYPES[self.type]["flipped"]
-        self._attr_name = name + " " + BINARY_SENSOR_TYPES[sensor_type]["name"]
+        self._attr_name = name + " " + BINARY_SENSOR_TYPES[self.type]["name"]
         self._attr_device_class = BINARY_SENSOR_TYPES[self.type]["device_class"]
 
     async def async_update(self) -> None:

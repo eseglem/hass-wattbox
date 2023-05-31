@@ -51,7 +51,7 @@ ALL_SENSOR_TYPES: Final[List[str]] = [*BINARY_SENSOR_TYPES.keys(), *SENSOR_TYPES
 WATTBOX_HOST_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST): cv.string,
-        vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.string,
+        vol.Optional(CONF_PORT, default=DEFAULT_PORT): int,
         vol.Optional(CONF_USERNAME, default=DEFAULT_USER): cv.string,
         vol.Optional(CONF_PASSWORD, default=DEFAULT_PASSWORD): cv.string,
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
@@ -92,10 +92,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         name = wattbox_host.get(CONF_NAME)
 
         if port in (22, 23):
+            _LOGGER.debug("Creating TCP WattBox")
             hass.data[DOMAIN_DATA][name] = await async_create_ip_wattbox(
                 host=host, user=username, password=password, port=port
             )
         else:
+            _LOGGER.debug("Creating HTTP WattBox")
             hass.data[DOMAIN_DATA][name] = await async_create_http_wattbox(
                 host=host, user=username, password=password, port=port
             )

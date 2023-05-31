@@ -1,9 +1,10 @@
 """Sensor platform for wattbox."""
 
 import logging
-from typing import List
+from typing import List, Union
 
-from homeassistant.const import CONF_NAME, CONF_RESOURCES, STATE_UNKNOWN
+from homeassistant.components.integration.sensor import IntegrationSensor
+from homeassistant.const import CONF_NAME, CONF_RESOURCES, STATE_UNKNOWN, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
@@ -22,7 +23,7 @@ async def async_setup_platform(  # pylint: disable=unused-argument
 ) -> None:
     """Setup sensor platform."""
     name: str = discovery_info[CONF_NAME]
-    entities: List[WattBoxSensor] = []
+    entities: List[Union[WattBoxSensor, IntegrationSensor]] = []
 
     for resource in discovery_info[CONF_RESOURCES]:
         sensor_type = resource.lower()
@@ -32,9 +33,23 @@ async def async_setup_platform(  # pylint: disable=unused-argument
 
         entities.append(WattBoxSensor(hass, name, sensor_type))
 
-    async_add_entities(entities, True)
+    # TODO: Setting default to true?
+    # Add an IntegrationSensor, so end users don't have to manually configure it.
+    entities.append(
+        IntegrationSensor(
+            integration_method="trapezoidal",
+            name=f"{name}_energy_spent",
+            round_digits=2,
+            source_entity=f"sensor.{name}_power",
+            unique_id=None,
+            unit_prefix="k",
+            unit_time=UnitOfTime.HOURS,
+        )
+    )
 
+    async_add_entities(entities)
 
+# TODO: homeassistant.components.sensor.SensorEntity?
 class WattBoxSensor(WattBoxEntity):
     """WattBox Sensor class."""
 
