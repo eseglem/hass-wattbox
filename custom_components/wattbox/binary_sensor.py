@@ -44,14 +44,13 @@ class WattBoxBinarySensor(WattBoxEntity, BinarySensorEntity):
         self.flipped: bool = BINARY_SENSOR_TYPES[self.type]["flipped"]
         self._attr_name = name + " " + BINARY_SENSOR_TYPES[sensor_type]["name"]
         self._attr_device_class = BINARY_SENSOR_TYPES[self.type]["device_class"]
+        self._wattbox =  self.hass.data[DOMAIN_DATA][self.wattbox_name]['wattbox']
+        self._attr_unique_id = '{}-bsensor-{}'.format(self._wattbox.serial_number, sensor_type)
 
     async def async_update(self) -> None:
         """Update the sensor."""
-        # Get domain data
-        wattbox = self.hass.data[DOMAIN_DATA][self.wattbox_name]
-
         # Check the data and update the value.
-        value: bool | None = getattr(wattbox, self.type)
+        value: bool | None = getattr(self._wattbox, self.type)
         if value is not None and self.flipped:
             value = not value
         self._attr_is_on = value

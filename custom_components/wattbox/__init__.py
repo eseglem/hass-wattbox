@@ -41,6 +41,8 @@ from .const import (
     SENSOR_TYPES,
     STARTUP,
     TOPIC_UPDATE,
+    CONF_NAME_REGEXP,
+    CONF_SKIP_REGEXP
 )
 
 REQUIREMENTS: Final[List[str]] = ["pywattbox>=0.4.0"]
@@ -49,6 +51,7 @@ _LOGGER = logging.getLogger(__name__)
 
 ALL_SENSOR_TYPES: Final[List[str]] = [*BINARY_SENSOR_TYPES.keys(), *SENSOR_TYPES.keys()]
 
+
 WATTBOX_HOST_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST): cv.string,
@@ -56,6 +59,8 @@ WATTBOX_HOST_SCHEMA = vol.Schema(
         vol.Optional(CONF_USERNAME, default=DEFAULT_USER): cv.string,
         vol.Optional(CONF_PASSWORD, default=DEFAULT_PASSWORD): cv.string,
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+        vol.Optional(CONF_NAME_REGEXP): cv.string,
+        vol.Optional(CONF_SKIP_REGEXP): cv.string,
         vol.Optional(CONF_RESOURCES, default=ALL_SENSOR_TYPES): vol.All(
             cv.ensure_list, [vol.In(ALL_SENSOR_TYPES)]
         ),
@@ -93,10 +98,13 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         port = wattbox_host.get(CONF_PORT)
         username = wattbox_host.get(CONF_USERNAME)
         name = wattbox_host.get(CONF_NAME)
+        name_regexp = wattbox_host.get(CONF_NAME_REGEXP)
+        skip_regexp = wattbox_host.get(CONF_SKIP_REGEXP)
 
-        hass.data[DOMAIN_DATA][name] = await hass.async_add_executor_job(
+        wattbox = await hass.async_add_executor_job(
             WattBox, host, port, username, password
         )
+        hass.data[DOMAIN_DATA][name] = { "wattbox": wattbox, "name_regexp": name_regexp, "skip_regexp": skip_regexp }
 
         # Load platforms
         for platform in PLATFORMS:
@@ -115,8 +123,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # Extra logging to ensure the right outlets are set up.
     _LOGGER.debug(", ".join([str(v) for _, v in hass.data[DOMAIN_DATA].items()]))
     _LOGGER.debug(repr(hass.data[DOMAIN_DATA]))
-    for _, wattbox in hass.data[DOMAIN_DATA].items():
-        _LOGGER.debug("%s has %s outlets", wattbox, len(wattbox.outlets))
+    for _, state in hass.data[DOMAIN_DATA].items():
+        wattbox = state['wattbox']
+        _LOGGER.debug("%s has %s outlets%s", wattbox, len(wattbox.outlets))
         for outlet in wattbox.outlets:
             _LOGGER.debug("Outlet: %s - %s", outlet, repr(outlet))
 
@@ -128,11 +137,12 @@ async def update_data(_: datetime, hass: HomeAssistant, name: str) -> None:
 
     # This is where the main logic to update platform data goes.
     try:
-        await hass.async_add_executor_job(hass.data[DOMAIN_DATA][name].update)
+        wattbox = hass.data[DOMAIN_DATA][name]['wattbox']
+        await hass.async_add_executor_job(wattbox.update)
         _LOGGER.debug(
             "Updated: %s - %s",
-            hass.data[DOMAIN_DATA][name],
-            repr(hass.data[DOMAIN_DATA][name]),
+            wattbox,
+            repr(wattbox),
         )
         # Send update to topic for entities to see
         async_dispatcher_send(hass, TOPIC_UPDATE.format(DOMAIN, name))

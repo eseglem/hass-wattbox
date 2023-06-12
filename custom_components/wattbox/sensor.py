@@ -44,11 +44,11 @@ class WattBoxSensor(WattBoxEntity):
         self._attr_name = name + " " + SENSOR_TYPES[self.sensor_type]["name"]
         self._attr_unit_of_measurement = SENSOR_TYPES[self.sensor_type]["unit"]
         self._attr_icon = SENSOR_TYPES[self.sensor_type]["icon"]
+        self._wattbox =  self.hass.data[DOMAIN_DATA][self.wattbox_name]['wattbox']
+        self._attr_unique_id = '{}-sensor-{}'.format(self._wattbox.serial_number, sensor_type)
 
     async def async_update(self) -> None:
         """Update the sensor."""
         # Get new data (if any)
-        wattbox = self.hass.data[DOMAIN_DATA][self.wattbox_name]
-
         # Check the data and update the value.
-        self._attr_state = getattr(wattbox, self.sensor_type, STATE_UNKNOWN)
+        self._attr_state = getattr(self._wattbox, self.sensor_type, STATE_UNKNOWN)
