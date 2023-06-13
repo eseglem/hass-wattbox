@@ -15,9 +15,9 @@ from .entity import WattBoxEntity
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(  # pylint: disable=unused-argument
+async def async_setup_platform(
     hass: HomeAssistant,
-    config: ConfigType,
+    _config: ConfigType,
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType,
 ) -> None:
@@ -33,7 +33,7 @@ async def async_setup_platform(  # pylint: disable=unused-argument
 
         entities.append(WattBoxSensor(hass, name, sensor_type))
 
-    # TODO: Setting default to true?
+    # TODO: Add a setting for this, default to true?
     # Add an IntegrationSensor, so end users don't have to manually configure it.
     entities.append(
         IntegrationSensor(
@@ -48,6 +48,7 @@ async def async_setup_platform(  # pylint: disable=unused-argument
     )
 
     async_add_entities(entities)
+
 
 # TODO: homeassistant.components.sensor.SensorEntity?
 class WattBoxSensor(WattBoxEntity):

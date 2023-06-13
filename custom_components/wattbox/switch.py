@@ -1,7 +1,7 @@
 """Switch platform for wattbox."""
 
 import logging
-from typing import Final, List
+from typing import Any, List
 
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.const import CONF_NAME
@@ -15,9 +15,9 @@ from .entity import WattBoxEntity
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(  # pylint: disable=unused-argument
+async def async_setup_platform(
     hass: HomeAssistant,
-    config: ConfigType,
+    _config: ConfigType,
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType,
 ) -> None:
@@ -39,14 +39,14 @@ async def async_setup_platform(  # pylint: disable=unused-argument
 class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
     """WattBox switch class."""
 
-    _attr_device_class: Final[str] = SwitchDeviceClass.OUTLET
+    _attr_device_class = SwitchDeviceClass.OUTLET
 
-    def __init__(self, hass: HomeAssistant, name: str, index: int):
+    def __init__(self, hass: HomeAssistant, name: str, index: int) -> None:
         super().__init__(hass, name, index)
         self.index: int = index
         self._attr_name = f"{name} Outlet {index}"
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Update the sensor."""
         # Get new data (if any)
         outlet = self.hass.data[DOMAIN_DATA][self.wattbox_name].outlets[self.index]
@@ -59,7 +59,7 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         self._attr_extra_state_attributes["method"] = outlet.method
         self._attr_extra_state_attributes["index"] = outlet.index
 
-    async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument
+    async def async_turn_on(self, **_kwargs: Any) -> None:
         """Turn on the switch."""
         _LOGGER.debug(
             "Turning On: %s - %s",
@@ -79,7 +79,7 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
             self.index
         ].async_turn_on()
 
-    async def async_turn_off(self, **kwargs) -> None:  # pylint: disable=unused-argument
+    async def async_turn_off(self, **_kwargs: Any) -> None:
         """Turn off the switch."""
         _LOGGER.debug(
             "Turning Off: %s - %s",
@@ -112,7 +112,7 @@ class WattBoxMasterSwitch(WattBoxBinarySwitch):
         super().__init__(hass, name, 0)
         self._attr_name = name + " Master Switch"
 
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Update the sensor."""
         # Get new data (if any)
         outlet = self.hass.data[DOMAIN_DATA][self.wattbox_name].master_outlet
@@ -120,7 +120,7 @@ class WattBoxMasterSwitch(WattBoxBinarySwitch):
             # Check the data and update the value.
             self._attr_is_on = outlet.status
 
-    async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument
+    async def async_turn_on(self, **_kwargs: Any) -> None:
         """Turn on the switch."""
         master_outlet = self.hass.data[DOMAIN_DATA][self.wattbox_name].master_outlet
 
@@ -131,7 +131,7 @@ class WattBoxMasterSwitch(WattBoxBinarySwitch):
             # Trigger the action on the wattbox.
             await master_outlet.async_turn_on()
 
-    async def async_turn_off(self, **kwargs) -> None:  # pylint: disable=unused-argument
+    async def async_turn_off(self, **_kwargs: Any) -> None:
         """Turn off the switch."""
         master_outlet = self.hass.data[DOMAIN_DATA][self.wattbox_name].master_outlet
 

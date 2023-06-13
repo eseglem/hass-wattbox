@@ -5,7 +5,6 @@ For more details about this component, please refer to
 https://github.com/eseglem/hass-wattbox/
 """
 import logging
-import os
 from datetime import datetime
 from functools import partial
 from typing import Final, List
@@ -72,12 +71,6 @@ CONFIG_SCHEMA = vol.Schema(
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up this component."""
-    from pywattbox import ( # pylint: disable=import-outside-toplevel
-        async_create_http_wattbox,
-        async_create_ip_wattbox,
-    )
-
-    # Print startup message
     _LOGGER.info(STARTUP)
 
     hass.data[DOMAIN_DATA] = {}
@@ -92,11 +85,17 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         name = wattbox_host.get(CONF_NAME)
 
         if port in (22, 23):
-            _LOGGER.debug("Creating TCP WattBox")
+            _LOGGER.debug("Importing IP Wattbox")
+            from pywattbox.ip_wattbox import async_create_ip_wattbox
+
+            _LOGGER.debug("Creating IP WattBox")
             hass.data[DOMAIN_DATA][name] = await async_create_ip_wattbox(
                 host=host, user=username, password=password, port=port
             )
         else:
+            _LOGGER.debug("Importing HTTP Wattbox")
+            from pywattbox.http_wattbox import async_create_http_wattbox
+
             _LOGGER.debug("Creating HTTP WattBox")
             hass.data[DOMAIN_DATA][name] = await async_create_http_wattbox(
                 host=host, user=username, password=password, port=port
@@ -132,7 +131,7 @@ async def update_data(_: datetime, hass: HomeAssistant, name: str) -> None:
 
     # This is where the main logic to update platform data goes.
     try:
-        await hass.async_add_executor_job(hass.data[DOMAIN_DATA][name].update)
+        await hass.data[DOMAIN_DATA][name].async_update()
         _LOGGER.debug(
             "Updated: %s - %s",
             hass.data[DOMAIN_DATA][name],

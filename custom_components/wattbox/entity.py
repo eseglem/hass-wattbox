@@ -14,9 +14,7 @@ class WattBoxEntity(Entity):
     _async_unsub_dispatcher_connect: Callable
     _attr_should_poll: Literal[False] = False
 
-    def __init__(  # pylint: disable=unused-argument
-        self, hass: HomeAssistant, name: str, *args
-    ) -> None:
+    def __init__(self, hass: HomeAssistant, name: str, *_args: Any) -> None:
         self.hass = hass
         self._attr_extra_state_attributes: Dict[str, Any] = {}
         self.wattbox_name: str = name
