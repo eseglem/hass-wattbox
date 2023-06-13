@@ -7,7 +7,7 @@ indent_size = 4
 [*.py]
 charset = utf-8
 
-[*.{json,yaml}]
+[*.{json,yaml,yml}]
 indent_size = 2
 
 [Makefile]
