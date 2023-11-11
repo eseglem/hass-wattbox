@@ -1,6 +1,6 @@
 {
   "name": "ludeeus/integration_blueprint",
-  "image": "mcr.microsoft.com/vscode/devcontainers/python:0-3.10-bullseye",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11-bullseye",
   "postCreateCommand": "scripts/setup",
   "forwardPorts": [
     8123
@@ -27,9 +27,6 @@
         "editor.tabSize": 4,
         "python.pythonPath": "/usr/bin/python3",
         "python.analysis.autoSearchPaths": false,
-        "python.linting.pylintEnabled": false,
-        "python.linting.enabled": true,
-        "python.formatting.provider": "none",
         "editor.formatOnPaste": false,
         "editor.formatOnSave": true,
         "editor.formatOnType": true,

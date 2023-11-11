@@ -5,9 +5,7 @@
   "integration_type": "device",
   "documentation": "https://github.com/eseglem/hass-wattbox",
   "issue_tracker": "https://github.com/eseglem/hass-wattbox/issues",
-  "dependencies": [
-    "component"
-  ],
+  "dependencies": [],
   "codeowners": [
     "@eseglem"
   ],

@@ -1,4 +1,4 @@
-homeassistant==2023.5.0
+homeassistant==2023.8.0
+homeassistant-stubs==2023.8.0
 pip>=21.0,<23.2
-homeassistant-stubs
 pywattbox [http, ip] @ git+https://github.com/eseglem/pywattbox@develop#pywattbox==0.6.0

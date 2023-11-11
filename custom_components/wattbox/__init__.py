@@ -125,7 +125,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     _LOGGER.debug(", ".join([str(v) for _, v in hass.data[DOMAIN_DATA].items()]))
     _LOGGER.debug(repr(hass.data[DOMAIN_DATA]))
     for _, wattbox in hass.data[DOMAIN_DATA].items():
-        _LOGGER.debug("%s has %s outlets%s", wattbox, len(wattbox.outlets))
+        _LOGGER.debug("%s has %s outlets", wattbox, len(wattbox.outlets))
         for outlet in wattbox.outlets:
             _LOGGER.debug("Outlet: %s - %s", outlet, repr(outlet))
 
