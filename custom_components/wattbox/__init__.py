@@ -28,6 +28,8 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     BINARY_SENSOR_TYPES,
+    CONF_NAME_REGEXP,
+    CONF_SKIP_REGEXP,
     DEFAULT_NAME,
     DEFAULT_PASSWORD,
     DEFAULT_PORT,
@@ -54,6 +56,8 @@ WATTBOX_HOST_SCHEMA = vol.Schema(
         vol.Optional(CONF_USERNAME, default=DEFAULT_USER): cv.string,
         vol.Optional(CONF_PASSWORD, default=DEFAULT_PASSWORD): cv.string,
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+        vol.Optional(CONF_NAME_REGEXP): cv.string,
+        vol.Optional(CONF_SKIP_REGEXP): cv.string,
         vol.Optional(CONF_RESOURCES, default=ALL_SENSOR_TYPES): vol.All(
             cv.ensure_list, [vol.In(ALL_SENSOR_TYPES)]
         ),
@@ -89,7 +93,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             from pywattbox.ip_wattbox import async_create_ip_wattbox
 
             _LOGGER.debug("Creating IP WattBox")
-            hass.data[DOMAIN_DATA][name] = await async_create_ip_wattbox(
+            wattbox = await async_create_ip_wattbox(
                 host=host, user=username, password=password, port=port
             )
         else:
@@ -97,9 +101,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             from pywattbox.http_wattbox import async_create_http_wattbox
 
             _LOGGER.debug("Creating HTTP WattBox")
-            hass.data[DOMAIN_DATA][name] = await async_create_http_wattbox(
+            wattbox = await async_create_http_wattbox(
                 host=host, user=username, password=password, port=port
             )
+        hass.data[DOMAIN_DATA][name] = wattbox
 
         # Load platforms
         for platform in PLATFORMS:
@@ -120,7 +125,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     _LOGGER.debug(", ".join([str(v) for _, v in hass.data[DOMAIN_DATA].items()]))
     _LOGGER.debug(repr(hass.data[DOMAIN_DATA]))
     for _, wattbox in hass.data[DOMAIN_DATA].items():
-        _LOGGER.debug("%s has %s outlets", wattbox, len(wattbox.outlets))
+        _LOGGER.debug("%s has %s outlets%s", wattbox, len(wattbox.outlets))
         for outlet in wattbox.outlets:
             _LOGGER.debug("Outlet: %s - %s", outlet, repr(outlet))
 
@@ -132,12 +137,9 @@ async def update_data(_dt: datetime, hass: HomeAssistant, name: str) -> None:
 
     # This is where the main logic to update platform data goes.
     try:
-        await hass.data[DOMAIN_DATA][name].async_update()
-        _LOGGER.debug(
-            "Updated: %s - %s",
-            hass.data[DOMAIN_DATA][name],
-            repr(hass.data[DOMAIN_DATA][name]),
-        )
+        wattbox = hass.data[DOMAIN_DATA][name]
+        await wattbox.async_update()
+        _LOGGER.debug("Updated: %s - %s", wattbox, repr(wattbox))
         # Send update to topic for entities to see
         async_dispatcher_send(hass, TOPIC_UPDATE.format(DOMAIN, name))
     except Exception as error:

@@ -4,21 +4,23 @@ from typing import Any, Callable, Dict, Literal
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
+from pywattbox.base import BaseWattBox
 
-from .const import DOMAIN, TOPIC_UPDATE
+from .const import DOMAIN, DOMAIN_DATA, TOPIC_UPDATE
 
 
 class WattBoxEntity(Entity):
     """WattBox Entity class."""
 
+    _wattbox: BaseWattBox
     _async_unsub_dispatcher_connect: Callable
     _attr_should_poll: Literal[False] = False
 
     def __init__(self, hass: HomeAssistant, name: str, *_args: Any) -> None:
         self.hass = hass
+        self._wattbox = self.hass.data[DOMAIN_DATA][name]
+        self.topic: str = TOPIC_UPDATE.format(DOMAIN, name)
         self._attr_extra_state_attributes: Dict[str, Any] = {}
-        self.wattbox_name: str = name
-        self.topic: str = TOPIC_UPDATE.format(DOMAIN, self.wattbox_name)
 
     async def async_added_to_hass(self) -> None:
         """Register callbacks."""

@@ -17,12 +17,15 @@ Easiest way to install this component is through [HACS][hacs].
 Configuration through `configuration.yaml`, not available in UI yet.
 
 Example Config:
-```
+
+```yaml
 wattbox:
 - host: 192.168.1.100
   name: wattbox1
   username: username1
   password: password1
+  name_regexp: "^Fixed Prefix (.*)$"
+  skip_regexp: "SKIP"
   scan_interval: 00:00:10
 - host: 192.168.1.101
   name: wattbox2
@@ -40,40 +43,44 @@ wattbox:
 
 Configuration Options:
 
-* *host*: Host IP of the WattBox (Required)
-* *port*: Port of the HTTP interface (Default 80)
-* *username*: Username for authentication (Default wattbox)
-* *password*: Password for authentication (Default wattbox)
-* *name*: Name for the WattBox (Default wattbox)
-* *resources*: A list of resources to enable (Default all of them)
-* *scan_interval*: A time interval run updates at (Default 30s, format HH:MM:SS)
+- _host_: Host IP of the WattBox (Required)
+- _port_: Port of the HTTP interface (Default 80)
+- _username_: Username for authentication (Default wattbox)
+- _password_: Password for authentication (Default wattbox)
+- _name_: Name for the WattBox (Default wattbox)
+- _resources_: A list of resources to enable (Default all of them)
+- _scan_interval_: A time interval run updates at (Default 30s, format HH:MM:SS)
+- _name_regexp_: A regexp to extract the name to use for the outlet instead of just the index. If there is a match group, it is used, else the whole match is used.
+- _skip_regexp_: A regexp to use that, if the outlet name matches, the outlet is not added as a switch entity.
 
 Resources:
-* audible_alarm
-* auto_reboot
-* battery_health
-* battery_test
-* cloud_status
-* has_ups
-* mute
-* power_lost
-* safe_voltage_status
-* battery_charge
-* battery_load
-* current_value
-* est_run_time
-* power_value
-* voltage_value
 
-Master switch will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly. If ALL of the switches controlled by Master are on, then Master will be on. Otherwise it will be off.
+- audible_alarm
+- auto_reboot
+- battery_health
+- battery_test
+- cloud_status
+- has_ups
+- mute
+- power_lost
+- safe_voltage_status
+- battery_charge
+- battery_load
+- current_value
+- est_run_time
+- power_value
+- voltage_value
 
-Be careful, if the WattBox controls the power to its own networking equipment you can turn it off and not have remote access until you fix it. You may even have to plug it in elsewhere to get back online and turn that outlet back on in HA.
+Be careful, if the WattBox controls the power to its own networking equipment you can turn it off and not have remote access until you fix it. You may even have to plug it in elsewhere to get back online and turn that outlet back on in HA. You can use the _skip_regexp_ option for those outlets.
+
+Master switch will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly. If ALL of the switches controlled by Master are on, then Master will be on. Otherwise it will be off. If any outlets on a wattbox are skipped via _skip_regexp_ then
+the master switch for that wattbox will also not be added as an entity.
 
 Based on [integration_blueprint template][blueprint]
 
 <!---->
 
-***
+---
 
 [wattbox]: https://www.snapav.com/shop/en/snapav/wattbox
 [hacs]: https://hacs.xyz/

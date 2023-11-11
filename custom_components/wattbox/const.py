@@ -14,7 +14,7 @@ from homeassistant.const import (
 # Base component constants
 DOMAIN: Final[str] = "wattbox"
 DOMAIN_DATA: Final[str] = f"{DOMAIN}_data"
-VERSION: Final[str] = "0.8.1"
+VERSION: Final[str] = "0.9.0"
 PLATFORMS: Final[List[str]] = ["binary_sensor", "sensor", "switch"]
 ISSUE_URL: Final[str] = "https://github.com/eseglem/hass-wattbox/issues"
 
@@ -40,6 +40,10 @@ DEFAULT_USER: Final[str] = DOMAIN
 DEFAULT_SCAN_INTERVAL: Final[timedelta] = timedelta(seconds=30)
 
 TOPIC_UPDATE: Final[str] = "{}_data_update_{}"
+
+# config options
+CONF_NAME_REGEXP: Final[str] = 'name_regexp'
+CONF_SKIP_REGEXP: Final[str] = 'skip_regexp'
 
 
 class _BinarySensorDict(TypedDict):
