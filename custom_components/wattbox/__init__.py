@@ -25,6 +25,7 @@ from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import ConfigType
+from pywattbox.base import BaseWattBox
 
 from .const import (
     BINARY_SENSOR_TYPES,
@@ -88,6 +89,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         username = wattbox_host.get(CONF_USERNAME)
         name = wattbox_host.get(CONF_NAME)
 
+        wattbox: BaseWattBox
         if port in (22, 23):
             _LOGGER.debug("Importing IP Wattbox")
             from pywattbox.ip_wattbox import async_create_ip_wattbox

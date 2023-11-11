@@ -24,6 +24,7 @@ def validate_regex(config: ConfigType, key: str) -> re.Pattern[str] | None:
             return re.compile(regexp_str)
         except re.error:
             _LOGGER.error("Invalid %s: %s", key, regexp_str)
+    return None
 
 
 async def async_setup_platform(
@@ -136,7 +137,7 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
 class WattBoxMasterSwitch(WattBoxBinarySwitch):
     """WattBox master switch class."""
 
-    _outlet: Outlet | None
+    _outlet: Outlet | None  # type: ignore[assignment]
 
     def __init__(self, hass: HomeAssistant, name: str) -> None:
         super().__init__(hass, name, 0)
