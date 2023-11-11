@@ -4,6 +4,7 @@ import logging
 from typing import List, Union
 
 from homeassistant.components.integration.sensor import IntegrationSensor
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import CONF_NAME, CONF_RESOURCES, STATE_UNKNOWN, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -50,15 +51,17 @@ async def async_setup_platform(
     async_add_entities(entities)
 
 
-# TODO: homeassistant.components.sensor.SensorEntity?
-class WattBoxSensor(WattBoxEntity):
+class WattBoxSensor(WattBoxEntity, SensorEntity):
     """WattBox Sensor class."""
 
     def __init__(self, hass: HomeAssistant, name: str, sensor_type: str) -> None:
         super().__init__(hass, name, sensor_type)
         self.sensor_type: str = sensor_type
         self._attr_name = name + " " + SENSOR_TYPES[self.sensor_type]["name"]
-        self._attr_unit_of_measurement = SENSOR_TYPES[self.sensor_type]["unit"]
+        self._attr_native_unit_of_measurement = SENSOR_TYPES[self.sensor_type]["unit"]
+        self._attr_suggested_unit_of_measurement = SENSOR_TYPES[self.sensor_type][
+            "unit"
+        ]
         self._attr_icon = SENSOR_TYPES[self.sensor_type]["icon"]
 
     async def async_update(self) -> None:
@@ -67,4 +70,4 @@ class WattBoxSensor(WattBoxEntity):
         wattbox = self.hass.data[DOMAIN_DATA][self.wattbox_name]
 
         # Check the data and update the value.
-        self._attr_state = getattr(wattbox, self.sensor_type, STATE_UNKNOWN)
+        self._attr_native_value = getattr(wattbox, self.sensor_type, STATE_UNKNOWN)

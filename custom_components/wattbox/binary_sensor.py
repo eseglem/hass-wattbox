@@ -38,10 +38,12 @@ async def async_setup_platform(
 class WattBoxBinarySensor(WattBoxEntity, BinarySensorEntity):
     """WattBox binary_sensor class."""
 
+    _flipped: bool = False
+
     def __init__(self, hass: HomeAssistant, name: str, sensor_type: str) -> None:
         super().__init__(hass, name, sensor_type)
         self.type: str = sensor_type
-        self.flipped: bool = BINARY_SENSOR_TYPES[self.type]["flipped"]
+        self._flipped = BINARY_SENSOR_TYPES[self.type]["flipped"]
         self._attr_name = name + " " + BINARY_SENSOR_TYPES[self.type]["name"]
         self._attr_device_class = BINARY_SENSOR_TYPES[self.type]["device_class"]
 
@@ -51,7 +53,7 @@ class WattBoxBinarySensor(WattBoxEntity, BinarySensorEntity):
         wattbox = self.hass.data[DOMAIN_DATA][self.wattbox_name]
 
         # Check the data and update the value.
-        value: bool | None = getattr(wattbox, self.type)
-        if value is not None and self.flipped:
+        value: bool | None = getattr(wattbox, self.type, None)
+        if value is not None and self._flipped:
             value = not value
         self._attr_is_on = value

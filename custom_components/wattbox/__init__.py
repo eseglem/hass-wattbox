@@ -110,6 +110,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 )
             )
 
+        # Use the scan interval to trigger updates
         scan_interval = wattbox_host.get(CONF_SCAN_INTERVAL)
         async_track_time_interval(
             hass, partial(update_data, hass=hass, name=name), scan_interval
@@ -126,7 +127,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
-async def update_data(_: datetime, hass: HomeAssistant, name: str) -> None:
+async def update_data(_dt: datetime, hass: HomeAssistant, name: str) -> None:
     """Update data."""
 
     # This is where the main logic to update platform data goes.
@@ -139,5 +140,5 @@ async def update_data(_: datetime, hass: HomeAssistant, name: str) -> None:
         )
         # Send update to topic for entities to see
         async_dispatcher_send(hass, TOPIC_UPDATE.format(DOMAIN, name))
-    except Exception as error:  # pylint: disable=broad-except
+    except Exception as error:
         _LOGGER.error("Could not update data - %s", error)
