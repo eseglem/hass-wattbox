@@ -18,7 +18,9 @@ VERSION: Final[str] = "0.9.0"
 PLATFORMS: Final[List[str]] = ["binary_sensor", "sensor", "switch"]
 ISSUE_URL: Final[str] = "https://github.com/eseglem/hass-wattbox/issues"
 
-STARTUP: Final[str] = f"""
+STARTUP: Final[
+    str
+] = f"""
 -------------------------------------------------------------------
 {DOMAIN}
 Version: {VERSION}
@@ -42,8 +44,8 @@ DEFAULT_SCAN_INTERVAL: Final[timedelta] = timedelta(seconds=30)
 TOPIC_UPDATE: Final[str] = "{}_data_update_{}"
 
 # config options
-CONF_NAME_REGEXP: Final[str] = 'name_regexp'
-CONF_SKIP_REGEXP: Final[str] = 'skip_regexp'
+CONF_NAME_REGEXP: Final[str] = "name_regexp"
+CONF_SKIP_REGEXP: Final[str] = "skip_regexp"
 
 
 class _BinarySensorDict(TypedDict):

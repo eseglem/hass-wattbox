@@ -10,27 +10,29 @@
 
 # hass-wattbox
 
-_Home Assistant Component to integrate with [WattBox][wattbox]._
+[Home Assistant](home-assistant) Custom Component to integrate with [WattBox][wattbox].
 
 Easiest way to install this component is through [HACS][hacs].
 
-Configuration through `configuration.yaml`, not available in UI yet.
+Configuration through `configuration.yaml`. UI based configuration not available yet.
 
 Example Config:
 
 ```yaml
 wattbox:
-- host: 192.168.1.100
-  name: wattbox1
-  username: username1
-  password: password1
+- name: WattBox-HTTP
+  host: !secret wattbox1_ip
+  port: 80
+  username: !secret wattbox1_username
+  password: !secret wattbox1_password
   name_regexp: "^Fixed Prefix (.*)$"
   skip_regexp: "SKIP"
   scan_interval: 00:00:10
-- host: 192.168.1.101
-  name: wattbox2
-  username: username2
-  password: password2
+- name: WattBox-SSH
+  host: !secret wattbox2_ip
+  port: 22
+  username: !secret wattbox2_username
+  password: !secret wattbox2_password
   scan_interval: 00:00:20
   resources:
   - auto_reboot
@@ -43,15 +45,15 @@ wattbox:
 
 Configuration Options:
 
-- _host_: Host IP of the WattBox (Required)
-- _port_: Port of the HTTP interface (Default 80)
-- _username_: Username for authentication (Default wattbox)
-- _password_: Password for authentication (Default wattbox)
-- _name_: Name for the WattBox (Default wattbox)
-- _resources_: A list of resources to enable (Default all of them)
-- _scan_interval_: A time interval run updates at (Default 30s, format HH:MM:SS)
-- _name_regexp_: A regexp to extract the name to use for the outlet instead of just the index. If there is a match group, it is used, else the whole match is used.
-- _skip_regexp_: A regexp to use that, if the outlet name matches, the outlet is not added as a switch entity.
+- **`host`**: Host IP of the WattBox (Required)
+- **`name`**: Name for the WattBox (Default WattBox)
+- **`port`**: Port of the HTTP interface (Default 80)
+- **`username`**: Username for authentication (Default wattbox)
+- **`password`**: Password for authentication (Default wattbox)
+- **`scan_interval`**: A time interval run updates at (Default 30s, format HH:MM:SS)
+- **`resources`**: A list of resources to enable (Default all of them)
+- **`name_regexp`**: A regexp to extract the name to use for the outlet instead of just the index. If there is a match group, it is used, else the whole match is used.
+- **`skip_regexp`**: A regexp to use that, if the outlet name matches, the outlet is not added as a switch entity.
 
 Resources:
 
@@ -71,12 +73,12 @@ Resources:
 - power_value
 - voltage_value
 
-Be careful, if the WattBox controls the power to its own networking equipment you can turn it off and not have remote access until you fix it. You may even have to plug it in elsewhere to get back online and turn that outlet back on in HA. You can use the _skip_regexp_ option for those outlets.
+Be careful, if the WattBox controls the power to its own networking equipment you can turn it off and not have remote access until you fix it. You may even have to plug it in elsewhere to get back online and turn that outlet back on in HA. You can use the `skip_regexp` option for those outlets.
 
-Master switch will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly. If ALL of the switches controlled by Master are on, then Master will be on. Otherwise it will be off. If any outlets on a wattbox are skipped via _skip_regexp_ then
+Master switch will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly. If ALL of the switches controlled by Master are on, then Master will be on. Otherwise it will be off. If any outlets on a wattbox are skipped via `skip_regexp` then
 the master switch for that wattbox will also not be added as an entity.
 
-Based on [integration_blueprint template][blueprint]
+Based on: [ludeeus/integration_blueprint][blueprint]
 
 <!---->
 
@@ -97,3 +99,4 @@ Based on [integration_blueprint template][blueprint]
 [maintenance-shield]: https://img.shields.io/badge/maintainer-Erik%20Seglem%20%40Bedon292-blue
 [hacs]: https://github.com/custom-components/hacs
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange
+[home-assistant]: https://github.com/home-assistant/core
