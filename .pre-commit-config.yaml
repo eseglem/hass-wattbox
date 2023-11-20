@@ -38,5 +38,5 @@ repos:
         pass_filenames: false
         additional_dependencies:
           - homeassistant-stubs
-          - pywattbox[http,ip]==0.7.1
+          - pywattbox[http,ip]==0.7.2
           - types-beautifulsoup4

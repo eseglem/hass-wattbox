@@ -20,7 +20,7 @@
     "scrapli"
   ],
   "requirements": [
-    "pywattbox[http,ip]==0.7.1"
+    "pywattbox[http,ip]==0.7.2"
   ],
   "version": "0.9.0"
 }
