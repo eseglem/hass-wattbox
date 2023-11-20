@@ -12,7 +12,7 @@
     "@eseglem"
   ],
   "requirements": [
-    "pywattbox[http,ip]@git+https://github.com/eseglem/pywattbox@develop#pywattbox==0.6.0"
+    "pywattbox[http,ip]==0.7.0"
   ],
   "loggers": [
     "pywattbox"

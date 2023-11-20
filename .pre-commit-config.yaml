@@ -20,7 +20,7 @@ repos:
       - id: pyupgrade
         args: ["--py38-plus", "--keep-runtime-typing"]
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.1.5
+    rev: v0.1.6
     hooks:
       - id: ruff
         args: ["--fix"]
@@ -38,5 +38,5 @@ repos:
         pass_filenames: false
         additional_dependencies:
           - homeassistant-stubs
-          - pywattbox [http, ip] @ git+https://github.com/eseglem/pywattbox@develop#pywattbox==0.6.0
+          - pywattbox[http,ip]==0.7.0
           - types-beautifulsoup4

@@ -1,6 +1,6 @@
 homeassistant==2023.11.0
 homeassistant-stubs==2023.11.0
-pywattbox [http, ip] @ git+https://github.com/eseglem/pywattbox@develop#pywattbox==0.6.0
+pywattbox==0.7.0
 ruff
 pre-commit
 # Issue with default_config, python3.11, and botocore
