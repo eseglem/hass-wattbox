@@ -44,7 +44,7 @@ from .const import (
     TOPIC_UPDATE,
 )
 
-REQUIREMENTS: Final[List[str]] = ["pywattbox>=0.5.0"]
+REQUIREMENTS: Final[List[str]] = ["pywattbox>=0.7.1"]
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -1,11 +1,11 @@
 default_config:
 
 wattbox:
-  - host: !secret wattbox1_ip
-    name: wattbox1
-    scan_interval: 00:00:30
-    username: !secret wattbox1_username
-    password: !secret wattbox1_password
+  # - host: !secret wattbox1_ip
+  #   name: wattbox1
+  #   scan_interval: 00:00:30
+  #   username: !secret wattbox1_username
+  #   password: !secret wattbox1_password
   - host: !secret wattbox2_ip
     name: wattbox2
     scan_interval: 00:00:30
@@ -18,4 +18,4 @@ logger:
   logs:
     custom_components.wattbox: debug
     pywattbox: debug
-    scrapli: debug
+    # scrapli: debug
