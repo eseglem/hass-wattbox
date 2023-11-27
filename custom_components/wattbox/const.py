@@ -14,7 +14,7 @@ from homeassistant.const import (
 # Base component constants
 DOMAIN: Final[str] = "wattbox"
 DOMAIN_DATA: Final[str] = f"{DOMAIN}_data"
-VERSION: Final[str] = "0.8.1"
+VERSION: Final[str] = "0.8.2"
 PLATFORMS: Final[List[str]] = ["binary_sensor", "sensor", "switch"]
 REQUIRED_FILES: Final[List[str]] = [
     "binary_sensor.py",

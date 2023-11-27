@@ -10,6 +10,6 @@
         "@eseglem"
     ],
     "requirements": [
-        "pywattbox>=0.4.0"
+        "pywattbox>=0.4.0,<0.7.0"
     ]
 }
