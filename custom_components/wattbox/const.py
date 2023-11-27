@@ -14,7 +14,7 @@ from homeassistant.const import (
 # Base component constants
 DOMAIN: Final[str] = "wattbox"
 DOMAIN_DATA: Final[str] = f"{DOMAIN}_data"
-VERSION: Final[str] = "0.9.0"
+VERSION: Final[str] = "0.9.1"
 PLATFORMS: Final[List[str]] = ["binary_sensor", "sensor", "switch"]
 ISSUE_URL: Final[str] = "https://github.com/eseglem/hass-wattbox/issues"
 
@@ -119,3 +119,5 @@ SENSOR_TYPES: Final[Dict[str, _SensorTypeDict]] = {
         "icon": "mdi:lightning-bolt-circle",
     },
 }
+
+ALL_SENSOR_TYPES: Final[List[str]] = [*BINARY_SENSOR_TYPES.keys(), *SENSOR_TYPES.keys()]

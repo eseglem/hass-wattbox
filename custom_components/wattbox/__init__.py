@@ -9,14 +9,11 @@ from datetime import datetime
 from functools import partial
 from typing import Final, List
 
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
     CONF_PASSWORD,
     CONF_PORT,
-    CONF_RESOURCES,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
@@ -28,18 +25,9 @@ from homeassistant.helpers.typing import ConfigType
 from pywattbox.base import BaseWattBox
 
 from .const import (
-    BINARY_SENSOR_TYPES,
-    CONF_NAME_REGEXP,
-    CONF_SKIP_REGEXP,
-    DEFAULT_NAME,
-    DEFAULT_PASSWORD,
-    DEFAULT_PORT,
-    DEFAULT_SCAN_INTERVAL,
-    DEFAULT_USER,
     DOMAIN,
     DOMAIN_DATA,
     PLATFORMS,
-    SENSOR_TYPES,
     STARTUP,
     TOPIC_UPDATE,
 )
@@ -47,31 +35,6 @@ from .const import (
 REQUIREMENTS: Final[List[str]] = ["pywattbox>=0.7.2"]
 
 _LOGGER = logging.getLogger(__name__)
-
-ALL_SENSOR_TYPES: Final[List[str]] = [*BINARY_SENSOR_TYPES.keys(), *SENSOR_TYPES.keys()]
-
-WATTBOX_HOST_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_HOST): cv.string,
-        vol.Optional(CONF_PORT, default=DEFAULT_PORT): int,
-        vol.Optional(CONF_USERNAME, default=DEFAULT_USER): cv.string,
-        vol.Optional(CONF_PASSWORD, default=DEFAULT_PASSWORD): cv.string,
-        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-        vol.Optional(CONF_NAME_REGEXP): cv.string,
-        vol.Optional(CONF_SKIP_REGEXP): cv.string,
-        vol.Optional(CONF_RESOURCES, default=ALL_SENSOR_TYPES): vol.All(
-            cv.ensure_list, [vol.In(ALL_SENSOR_TYPES)]
-        ),
-        vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): cv.time_period,
-    }
-)
-
-CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: vol.All(cv.ensure_list, [WATTBOX_HOST_SCHEMA]),
-    },
-    extra=vol.ALLOW_EXTRA,
-)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
