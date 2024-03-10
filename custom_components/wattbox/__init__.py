@@ -41,6 +41,8 @@ from .const import (
     SENSOR_TYPES,
     STARTUP,
     TOPIC_UPDATE,
+    CONF_NAME_REGEXP,
+    CONF_SKIP_REGEXP
 )
 
 REQUIREMENTS: Final[List[str]] = ["pywattbox>=0.4.0"]
@@ -58,6 +60,8 @@ WATTBOX_HOST_SCHEMA = vol.Schema(
         vol.Optional(CONF_USERNAME, default=DEFAULT_USER): cv.string,
         vol.Optional(CONF_PASSWORD, default=DEFAULT_PASSWORD): cv.string,
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+        vol.Optional(CONF_NAME_REGEXP): cv.string,
+        vol.Optional(CONF_SKIP_REGEXP): cv.string,
         vol.Optional(CONF_USE_OUTLET_NAMES, default=False): cv.boolean,
         vol.Optional(CONF_RESOURCES, default=ALL_SENSOR_TYPES): vol.All(
             cv.ensure_list, [vol.In(ALL_SENSOR_TYPES)]
@@ -96,13 +100,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         port = wattbox_host.get(CONF_PORT)
         username = wattbox_host.get(CONF_USERNAME)
         name = wattbox_host.get(CONF_NAME)
+        name_regexp = wattbox_host.get(CONF_NAME_REGEXP)
+        skip_regexp = wattbox_host.get(CONF_SKIP_REGEXP)
         use_outlet_names = wattbox_host.get(CONF_USE_OUTLET_NAMES)
 
         wattbox = await hass.async_add_executor_job(
             WattBox, host, port, username, password
         )
-        hass.data[DOMAIN_DATA][name] = { wattbox: wattbox, use_outlet_names: use_outlet_names }
-
+        hass.data[DOMAIN_DATA][name] = { "wattbox": wattbox, "name_regexp": name_regexp, "skip_regexp": skip_regexp, "use_outlet_names": use_outlet_names }
 
         # Load platforms
         for platform in PLATFORMS:
