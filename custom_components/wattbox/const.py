@@ -6,6 +6,7 @@ from typing import Dict, Final, List, TypedDict
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.const import (
     UnitOfElectricPotential,
+    UnitOfElectricCurrent,
     PERCENTAGE,
     UnitOfPower,
     UnitOfTime,
@@ -103,7 +104,11 @@ SENSOR_TYPES: Final[Dict[str, _SensorTypeDict]] = {
         "icon": "mdi:battery",
     },
     "battery_load": {"name": "Battery Load", "unit": PERCENTAGE, "icon": "mdi:gauge"},
-    "current_value": {"name": "Current", "unit": "A", "icon": "mdi:current-ac"},
+    "current_value": {
+        "name": "Current",
+        "unit": UnitOfElectricCurrent.AMPERE,
+        "icon": "mdi:current-ac",
+    },
     "est_run_time": {
         "name": "Estimated Run Time",
         "unit": UnitOfTime.MINUTES,
@@ -116,7 +121,7 @@ SENSOR_TYPES: Final[Dict[str, _SensorTypeDict]] = {
     },
     "voltage_value": {
         "name": "Voltage",
-        "unit": UnitOfElectricPotential.VOLT ,
+        "unit": UnitOfElectricPotential.VOLT,
         "icon": "mdi:lightning-bolt-circle",
     },
 }

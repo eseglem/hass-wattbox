@@ -47,8 +47,6 @@ async def async_setup_platform(
     name_regexp = validate_regex(config, CONF_NAME_REGEXP)
     skip_regexp = validate_regex(config, CONF_SKIP_REGEXP)
 
-    # Add index 0 master outlet
-    entities.append(WattBoxResetButton(hass, name, 0, f"Master"))
     for i, outlet in wattbox.outlets.items():
         outlet_name = outlet.name or ""
 
@@ -85,8 +83,6 @@ class WattBoxResetButton(WattBoxEntity, ButtonEntity):
         # Master Outlet (index == 0) is not in the oulets dict
         if index:
             self._outlet = self._wattbox.outlets[index]
-        else:
-            self._outlet = self._wattbox.master_outlet
         # Determine outlet name
         if outlet_name := outlet_name.strip():
             self._attr_name = f"{name} {outlet_name} Reset"

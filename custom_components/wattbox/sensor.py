@@ -57,9 +57,6 @@ class WattBoxSensor(WattBoxEntity, SensorEntity):
         self.sensor_type: str = sensor_type
         self._attr_name = f"{name} {SENSOR_TYPES[self.sensor_type]['name']}"
         self._attr_native_unit_of_measurement = SENSOR_TYPES[self.sensor_type]["unit"]
-        self._attr_suggested_unit_of_measurement = SENSOR_TYPES[self.sensor_type][
-            "unit"
-        ]
         self._attr_icon = SENSOR_TYPES[self.sensor_type]["icon"]
         self._attr_unique_id = f"{self._wattbox.serial_number}-sensor-{sensor_type}"
 
