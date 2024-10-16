@@ -37,10 +37,11 @@ async def async_setup_platform(
     entities.append(
         IntegrationSensor(
             integration_method="trapezoidal",
-            name=f"{name}_energy_spent",
+            name=f"{name} Total Energy",
             round_digits=2,
-            source_entity=f"sensor.{name}_power",
-            unique_id=None,
+            max_sub_interval=timedelta(minutes = 5),
+            source_entity=f"sensor.{name}_power".replace(' ','_').lower(),
+            unique_id=f"{name}_total_energy".replace(' ','_').lower(),
             unit_prefix="k",
             unit_time=UnitOfTime.HOURS,
         )
