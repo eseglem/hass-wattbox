@@ -23,25 +23,26 @@ async def async_setup_platform(
     discovery_info: DiscoveryInfoType,
 ) -> None:
     """Setup sensor platform."""
-    name: str = discovery_info[CONF_NAME]
+    conf_name: str = discovery_info[CONF_NAME]
+    clean_name = conf_name.replace(" ", "_").lower()
     entities: List[Union[WattBoxSensor, IntegrationSensor]] = []
 
     resource: str
     for resource in discovery_info[CONF_RESOURCES]:
         if (sensor_type := resource.lower()) not in SENSOR_TYPES:
             continue
-        entities.append(WattBoxSensor(hass, name, sensor_type))
+        entities.append(WattBoxSensor(hass, conf_name, sensor_type))
 
     # TODO: Add a setting for this, default to true?
     # Add an IntegrationSensor, so end users don't have to manually configure it.
     entities.append(
         IntegrationSensor(
             integration_method="trapezoidal",
-            name=f"{name} Total Energy",
+            name=f"{conf_name} Total Energy",
             round_digits=2,
-            max_sub_interval=timedelta(minutes = 5),
-            source_entity=f"sensor.{name}_power".replace(' ','_').lower(),
-            unique_id=f"{name}_total_energy".replace(' ','_').lower(),
+            max_sub_interval=timedelta(minutes=5),
+            source_entity=f"sensor.{clean_name}_power",
+            unique_id=f"{clean_name}_total_energy",
             unit_prefix="k",
             unit_time=UnitOfTime.HOURS,
         )
