@@ -5,10 +5,10 @@ from typing import Dict, Final, List, TypedDict
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.const import (
-    ELECTRIC_POTENTIAL_VOLT,
+    UnitOfElectricPotential,
     PERCENTAGE,
-    POWER_WATT,
-    TIME_MINUTES,
+    UnitOfPower,
+    UnitOfTime,
 )
 
 # Base component constants
@@ -107,17 +107,17 @@ SENSOR_TYPES: Final[Dict[str, _SensorTypeDict]] = {
     "current_value": {"name": "Current", "unit": "A", "icon": "mdi:current-ac"},
     "est_run_time": {
         "name": "Estimated Run Time",
-        "unit": TIME_MINUTES,
+        "unit": UnitOfTime.MINUTES,
         "icon": "mdi:timer",
     },
     "power_value": {
         "name": "Power",
-        "unit": POWER_WATT,
+        "unit": UnitOfPower.WATT,
         "icon": "mdi:lightbulb-outline",
     },
     "voltage_value": {
         "name": "Voltage",
-        "unit": ELECTRIC_POTENTIAL_VOLT,
+        "unit": UnitOfElectricPotential.VOLT,
         "icon": "mdi:lightning-bolt-circle",
     },
 }
