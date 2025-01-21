@@ -25,6 +25,7 @@ from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.exceptions import PlatformNotReady
 from pywattbox.base import BaseWattBox
 
 from .const import (
@@ -95,17 +96,23 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             from pywattbox.ip_wattbox import async_create_ip_wattbox
 
             _LOGGER.debug("Creating IP WattBox")
-            wattbox = await async_create_ip_wattbox(
-                host=host, user=username, password=password, port=port
-            )
+            try:
+                wattbox = await async_create_ip_wattbox(
+                    host=host, user=username, password=password, port=port
+                )
+            except ConnectionError as ex:
+                raise PlatformNotReady(f"Connection error while connecting to {host}: {ex}") from ex
         else:
             _LOGGER.debug("Importing HTTP Wattbox")
             from pywattbox.http_wattbox import async_create_http_wattbox
 
             _LOGGER.debug("Creating HTTP WattBox")
-            wattbox = await async_create_http_wattbox(
-                host=host, user=username, password=password, port=port
-            )
+            try:
+                wattbox = await async_create_http_wattbox(
+                    host=host, user=username, password=password, port=port
+                )
+            except ConnectionError as ex:
+                raise PlatformNotReady(f"Connection error while connecting to {host}: {ex}") from ex
         hass.data[DOMAIN_DATA][name] = wattbox
 
         # Load platforms
