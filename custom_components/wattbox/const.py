@@ -5,18 +5,17 @@ from typing import Dict, Final, List, TypedDict
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.const import (
-    UnitOfElectricPotential,
-    UnitOfElectricCurrent,
+    ELECTRIC_POTENTIAL_VOLT,
     PERCENTAGE,
-    UnitOfPower,
-    UnitOfTime,
+    POWER_WATT,
+    TIME_MINUTES,
 )
 
 # Base component constants
 DOMAIN: Final[str] = "wattbox"
 DOMAIN_DATA: Final[str] = f"{DOMAIN}_data"
 VERSION: Final[str] = "0.9.0"
-PLATFORMS: Final[List[str]] = ["binary_sensor", "sensor", "switch", "button"]
+PLATFORMS: Final[List[str]] = ["binary_sensor", "sensor", "switch"]
 ISSUE_URL: Final[str] = "https://github.com/eseglem/hass-wattbox/issues"
 
 STARTUP: Final[
@@ -34,7 +33,6 @@ If you have any issues with this you need to open an issue here:
 # Icons
 ICON: Final[str] = "mdi:power"
 PLUG_ICON: Final[str] = "mdi:power-socket-us"
-RESTART_ICON: Final[str] = "mdi:restart"
 
 # Defaults
 DEFAULT_NAME: Final[str] = "WattBox"
@@ -104,24 +102,20 @@ SENSOR_TYPES: Final[Dict[str, _SensorTypeDict]] = {
         "icon": "mdi:battery",
     },
     "battery_load": {"name": "Battery Load", "unit": PERCENTAGE, "icon": "mdi:gauge"},
-    "current_value": {
-        "name": "Current",
-        "unit": UnitOfElectricCurrent.AMPERE,
-        "icon": "mdi:current-ac",
-    },
+    "current_value": {"name": "Current", "unit": "A", "icon": "mdi:current-ac"},
     "est_run_time": {
         "name": "Estimated Run Time",
-        "unit": UnitOfTime.MINUTES,
+        "unit": TIME_MINUTES,
         "icon": "mdi:timer",
     },
     "power_value": {
         "name": "Power",
-        "unit": UnitOfPower.WATT,
+        "unit": POWER_WATT,
         "icon": "mdi:lightbulb-outline",
     },
     "voltage_value": {
         "name": "Voltage",
-        "unit": UnitOfElectricPotential.VOLT,
+        "unit": ELECTRIC_POTENTIAL_VOLT,
         "icon": "mdi:lightning-bolt-circle",
     },
 }
