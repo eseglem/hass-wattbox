@@ -2,7 +2,6 @@
 
 import logging
 from typing import List, Union
-from asyncio import TimeoutError, wait_for
 
 from homeassistant.components.integration.sensor import IntegrationSensor
 from homeassistant.components.sensor import SensorEntity
