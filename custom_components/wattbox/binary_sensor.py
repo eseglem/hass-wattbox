@@ -7,6 +7,7 @@ from homeassistant.const import CONF_NAME, CONF_RESOURCES
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
+from homeassistant.exceptions import PlatformNotReady
 
 from .const import BINARY_SENSOR_TYPES
 from .entity import WattBoxEntity
@@ -21,18 +22,26 @@ async def async_setup_platform(
     discovery_info: DiscoveryInfoType,
 ) -> None:
     """Setup binary_sensor platform."""
-    name = discovery_info[CONF_NAME]
-    entities = []
+    try:
+        name = discovery_info[CONF_NAME]
+        entities = []
 
-    for resource in discovery_info[CONF_RESOURCES]:
-        sensor_type = resource.lower()
+        for resource in discovery_info[CONF_RESOURCES]:
+            sensor_type = resource.lower()
 
-        if sensor_type not in BINARY_SENSOR_TYPES:
-            continue
+            if sensor_type not in BINARY_SENSOR_TYPES:
+                continue
 
-        entities.append(WattBoxBinarySensor(hass, name, sensor_type))
+            try:
+                entities.append(WattBoxBinarySensor(hass, name, sensor_type))
+            except Exception as err:
+                _LOGGER.error("Failed to append WattBoxBinarySensor: %s", err)
+                raise PlatformNotReady from err
 
-    async_add_entities(entities)
+        async_add_entities(entities)
+    except Exception as err:
+        _LOGGER.error("Error setting up binary_sensor platform: %s", err)
+        raise PlatformNotReady from err
 
 
 class WattBoxBinarySensor(WattBoxEntity, BinarySensorEntity):

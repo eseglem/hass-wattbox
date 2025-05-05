@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from pywattbox.base import BaseWattBox, Outlet
+from homeassistant.exceptions import PlatformNotReady
 
 from .const import CONF_NAME_REGEXP, CONF_SKIP_REGEXP, DOMAIN_DATA, PLUG_ICON
 from .entity import WattBoxEntity
@@ -34,44 +35,52 @@ async def async_setup_platform(
     discovery_info: DiscoveryInfoType,
 ) -> None:
     """Setup switch platform."""
-    name: str = discovery_info[CONF_NAME]
+    try:
+        name: str = discovery_info[CONF_NAME]
 
-    entities: List[WattBoxEntity] = []
-    wattbox: BaseWattBox = hass.data[DOMAIN_DATA][name]
+        entities: List[WattBoxEntity] = []
+        wattbox: BaseWattBox = hass.data[DOMAIN_DATA][name]
 
-    name_regexp = validate_regex(config, CONF_NAME_REGEXP)
-    skip_regexp = validate_regex(config, CONF_SKIP_REGEXP)
+        name_regexp = validate_regex(config, CONF_NAME_REGEXP)
+        skip_regexp = validate_regex(config, CONF_SKIP_REGEXP)
 
-    skipped_an_outlet = False
-    for i, outlet in wattbox.outlets.items():
-        outlet_name = outlet.name or ""
+        skipped_an_outlet = False
+        for i, outlet in wattbox.outlets.items():
+            outlet_name = outlet.name or ""
 
-        # Skip outlets if they match regex
-        if skip_regexp and skip_regexp.search(outlet_name):
-            _LOGGER.debug("Skipping switch #%s - %s", i, outlet_name)
-            skipped_an_outlet = True
-            continue
+            # Skip outlets if they match regex
+            if skip_regexp and skip_regexp.search(outlet_name):
+                _LOGGER.debug("Skipping switch #%s - %s", i, outlet_name)
+                skipped_an_outlet = True
+                continue
 
-        if name_regexp:
-            if matched := name_regexp.search(outlet_name):
-                outlet_name = matched.group()
-                try:
-                    outlet_name = matched.group(1)
-                except re.error:
-                    pass
+            if name_regexp:
+                if matched := name_regexp.search(outlet_name):
+                    outlet_name = matched.group()
+                    try:
+                        outlet_name = matched.group(1)
+                    except re.error:
+                        pass
 
-        _LOGGER.debug("Adding switch #%s - %s", i, outlet_name)
-        entities.append(WattBoxBinarySwitch(hass, name, i, outlet_name))
+            _LOGGER.debug("Adding switch #%s - %s", i, outlet_name)
+            try:
+                entities.append(WattBoxBinarySwitch(hass, name, i, outlet_name))
+            except Exception as err:
+                _LOGGER.error("Failed to append WattBoxBinarySwitch: %s", err)
+                raise PlatformNotReady from err
 
-    # Skip the master switch iff any of the outlets are skipped
-    if not skipped_an_outlet:
-        entities.append(WattBoxMasterSwitch(hass, name))
-    else:
-        _LOGGER.debug(
-            "Skipping master switch because an outlet was skipped for %s", name
-        )
+        # Skip the master switch iff any of the outlets are skipped
+        if not skipped_an_outlet:
+            entities.append(WattBoxMasterSwitch(hass, name))
+        else:
+            _LOGGER.debug(
+                "Skipping master switch because an outlet was skipped for %s", name
+            )
 
-    async_add_entities(entities)
+        async_add_entities(entities)
+    except Exception as err:
+        _LOGGER.error("Error setting up switch platform: %s", err)
+        raise PlatformNotReady from err
 
 
 class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
