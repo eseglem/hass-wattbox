@@ -5,17 +5,23 @@ from typing import Dict, Final, List, TypedDict
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.const import (
-    ELECTRIC_POTENTIAL_VOLT,
+    UnitOfElectricPotential,
     PERCENTAGE,
-    POWER_WATT,
-    TIME_MINUTES,
+    UnitOfPower,
+    UnitOfTime,
 )
 
 # Base component constants
 DOMAIN: Final[str] = "wattbox"
 DOMAIN_DATA: Final[str] = f"{DOMAIN}_data"
-VERSION: Final[str] = "0.9.0"
+VERSION: Final[str] = "0.8.2"
 PLATFORMS: Final[List[str]] = ["binary_sensor", "sensor", "switch"]
+REQUIRED_FILES: Final[List[str]] = [
+    "binary_sensor.py",
+    "const.py",
+    "sensor.py",
+    "switch.py",
+]
 ISSUE_URL: Final[str] = "https://github.com/eseglem/hass-wattbox/issues"
 
 STARTUP: Final[
@@ -42,10 +48,6 @@ DEFAULT_USER: Final[str] = DOMAIN
 DEFAULT_SCAN_INTERVAL: Final[timedelta] = timedelta(seconds=30)
 
 TOPIC_UPDATE: Final[str] = "{}_data_update_{}"
-
-# config options
-CONF_NAME_REGEXP: Final[str] = "name_regexp"
-CONF_SKIP_REGEXP: Final[str] = "skip_regexp"
 
 
 class _BinarySensorDict(TypedDict):
@@ -105,17 +107,17 @@ SENSOR_TYPES: Final[Dict[str, _SensorTypeDict]] = {
     "current_value": {"name": "Current", "unit": "A", "icon": "mdi:current-ac"},
     "est_run_time": {
         "name": "Estimated Run Time",
-        "unit": TIME_MINUTES,
+        "unit": UnitOfTime.MINUTES,
         "icon": "mdi:timer",
     },
     "power_value": {
         "name": "Power",
-        "unit": POWER_WATT,
+        "unit": UnitOfPower.WATT,
         "icon": "mdi:lightbulb-outline",
     },
     "voltage_value": {
         "name": "Voltage",
-        "unit": ELECTRIC_POTENTIAL_VOLT,
+        "unit": UnitOfElectricPotential.VOLT,
         "icon": "mdi:lightning-bolt-circle",
     },
 }
