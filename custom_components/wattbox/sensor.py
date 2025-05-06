@@ -2,6 +2,7 @@
 
 import logging
 from typing import List, Union
+from datetime import timedelta
 
 from homeassistant.components.integration.sensor import IntegrationSensor
 from homeassistant.components.sensor import SensorEntity
