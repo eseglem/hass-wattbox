@@ -1,5 +1,5 @@
 homeassistant==2024.12.0
 homeassistant-stubs==2024.12.0
-pywattbox[http,ip]==0.8.0
+pywattbox[http,ip]==0.9.0
 ruff
 pre-commit
