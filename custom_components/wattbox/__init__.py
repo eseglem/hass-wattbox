@@ -26,6 +26,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import ConfigType
 from pywattbox.base import BaseWattBox
+from homeassistant.exceptions import PlatformNotReady
 
 from .const import (
     BINARY_SENSOR_TYPES,
@@ -90,22 +91,26 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         name = wattbox_host.get(CONF_NAME)
 
         wattbox: BaseWattBox
-        if port in (22, 23):
-            _LOGGER.debug("Importing IP Wattbox")
-            from pywattbox.ip_wattbox import async_create_ip_wattbox
+        try:
+            if port in (22, 23):
+                _LOGGER.debug("Importing IP Wattbox")
+                from pywattbox.ip_wattbox import async_create_ip_wattbox
 
-            _LOGGER.debug("Creating IP WattBox")
-            wattbox = await async_create_ip_wattbox(
-                host=host, user=username, password=password, port=port
-            )
-        else:
-            _LOGGER.debug("Importing HTTP Wattbox")
-            from pywattbox.http_wattbox import async_create_http_wattbox
+                _LOGGER.debug("Creating IP WattBox")
+                wattbox = await async_create_ip_wattbox(
+                    host=host, user=username, password=password, port=port
+                )
+            else:
+                _LOGGER.debug("Importing HTTP Wattbox")
+                from pywattbox.http_wattbox import async_create_http_wattbox
 
-            _LOGGER.debug("Creating HTTP WattBox")
-            wattbox = await async_create_http_wattbox(
-                host=host, user=username, password=password, port=port
-            )
+                _LOGGER.debug("Creating HTTP WattBox")
+                wattbox = await async_create_http_wattbox(
+                    host=host, user=username, password=password, port=port
+                )
+        except Exception as error:
+            _LOGGER.error("Error creating WattBox instance: %s", error)
+            raise PlatformNotReady from error
         hass.data[DOMAIN_DATA][name] = wattbox
 
         # Load platforms
