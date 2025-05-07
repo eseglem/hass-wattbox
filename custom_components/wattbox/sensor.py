@@ -1,7 +1,7 @@
 """Sensor platform for wattbox."""
 
 import logging
-from typing import List, Union
+from datetime import timedelta
 
 from homeassistant.components.integration.sensor import IntegrationSensor
 from homeassistant.components.sensor import SensorEntity
@@ -25,7 +25,7 @@ async def async_setup_platform(
     """Setup sensor platform."""
     conf_name: str = discovery_info[CONF_NAME]
     clean_name = conf_name.replace(" ", "_").lower()
-    entities: List[Union[WattBoxSensor, IntegrationSensor]] = []
+    entities: list[WattBoxSensor | IntegrationSensor] = []
 
     resource: str
     for resource in discovery_info[CONF_RESOURCES]:

@@ -1,8 +1,8 @@
-[tool.black]
-target-version = ["py311"]
-
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
+fix = true
+
+[tool.ruff.lint]
 select = [
     "F",   # pyflakes
     "E",   # pycodestyle errors
@@ -12,9 +12,8 @@ select = [
     "C",   # flake8-comprehensions
     "B",   # flake8-bugbear
 ]
-fix = true
 ignore = [
-    "E501", # Black handles line limits
+    "E501", # Formatter handles line limits
 ]
 
 [tool.ruff.per-file-ignores]
@@ -27,7 +26,7 @@ combine-as-imports = true
 keep-runtime-typing = true
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 show_error_codes = true
 check_untyped_defs = true
 no_implicit_reexport = false

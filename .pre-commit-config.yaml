@@ -3,7 +3,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
       - id: check-added-large-files
       - id: check-toml
@@ -15,28 +15,22 @@ repos:
         args: ["--fix=lf"]
       - id: trailing-whitespace
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.0
+    rev: v3.19.1
     hooks:
       - id: pyupgrade
-        args: ["--py38-plus", "--keep-runtime-typing"]
+        args: ["--py312-plus", "--keep-runtime-typing"]
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.1.6
+    rev: v0.11.8
     hooks:
       - id: ruff
         args: ["--fix"]
-  - repo: https://github.com/psf/black
-    rev: 23.11.0
+  - repo: local
     hooks:
-      - id: black
-        language_version: python
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.0
-    hooks:
+      # Using local mypy simplifies everything
       - id: mypy
-        language_version: python
-        args: [--config-file=pyproject.toml, custom_components/]
+        name: Run mypy on backend
+        files: ^custom_components/wattbox/
+        types: [python]
+        language: system
+        entry: mypy --config-file=pyproject.toml custom_components/wattbox/
         pass_filenames: false
-        additional_dependencies:
-          - homeassistant-stubs
-          - pywattbox[http,ip]==0.7.2
-          - types-beautifulsoup4

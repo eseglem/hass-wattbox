@@ -1,12 +1,12 @@
 """Constants for wattbox."""
 
 from datetime import timedelta
-from typing import Dict, Final, List, TypedDict
+from typing import Final, TypedDict
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.const import (
-    UnitOfElectricPotential,
     PERCENTAGE,
+    UnitOfElectricPotential,
     UnitOfPower,
     UnitOfTime,
 )
@@ -15,7 +15,7 @@ from homeassistant.const import (
 DOMAIN: Final[str] = "wattbox"
 DOMAIN_DATA: Final[str] = f"{DOMAIN}_data"
 VERSION: Final[str] = "0.9.0"
-PLATFORMS: Final[List[str]] = ["binary_sensor", "sensor", "switch"]
+PLATFORMS: Final[list[str]] = ["binary_sensor", "sensor", "switch"]
 ISSUE_URL: Final[str] = "https://github.com/eseglem/hass-wattbox/issues"
 
 STARTUP: Final[
@@ -56,7 +56,7 @@ class _BinarySensorDict(TypedDict):
     flipped: bool
 
 
-BINARY_SENSOR_TYPES: Final[Dict[str, _BinarySensorDict]] = {
+BINARY_SENSOR_TYPES: Final[dict[str, _BinarySensorDict]] = {
     "audible_alarm": {
         "name": "Audible Alarm",
         "device_class": BinarySensorDeviceClass.SOUND,
@@ -95,7 +95,7 @@ class _SensorTypeDict(TypedDict):
     icon: str
 
 
-SENSOR_TYPES: Final[Dict[str, _SensorTypeDict]] = {
+SENSOR_TYPES: Final[dict[str, _SensorTypeDict]] = {
     "battery_charge": {
         "name": "Battery Charge",
         "unit": PERCENTAGE,

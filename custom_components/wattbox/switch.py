@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Any, List
+from typing import Any
 
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.const import CONF_NAME
@@ -36,7 +36,7 @@ async def async_setup_platform(
     """Setup switch platform."""
     name: str = discovery_info[CONF_NAME]
 
-    entities: List[WattBoxEntity] = []
+    entities: list[WattBoxEntity] = []
     wattbox: BaseWattBox = hass.data[DOMAIN_DATA][name]
 
     name_regexp = validate_regex(config, CONF_NAME_REGEXP)
@@ -78,6 +78,7 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
     """WattBox switch class."""
 
     _attr_device_class = SwitchDeviceClass.OUTLET
+    _attr_icon = PLUG_ICON
     _outlet: Outlet
 
     def __init__(
@@ -127,11 +128,6 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         self.async_write_ha_state()
         # Trigger the action on the wattbox.
         await self._outlet.async_turn_off()
-
-    @property
-    def icon(self) -> str | None:
-        """Return the icon of this switch."""
-        return PLUG_ICON
 
 
 class WattBoxMasterSwitch(WattBoxBinarySwitch):

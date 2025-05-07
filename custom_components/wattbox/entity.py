@@ -1,5 +1,6 @@
 """Base Entity component for wattbox."""
-from typing import Any, Callable, Dict, Literal
+from collections.abc import Callable
+from typing import Any, Literal
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -20,7 +21,7 @@ class WattBoxEntity(Entity):
         self.hass = hass
         self._wattbox = self.hass.data[DOMAIN_DATA][name]
         self.topic: str = TOPIC_UPDATE.format(DOMAIN, name)
-        self._attr_extra_state_attributes: Dict[str, Any] = {}
+        self._attr_extra_state_attributes: dict[str, Any] = {}
 
     async def async_added_to_hass(self) -> None:
         """Register callbacks."""

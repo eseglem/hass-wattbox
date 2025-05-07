@@ -44,11 +44,11 @@ from .const import (
     TOPIC_UPDATE,
 )
 
-REQUIREMENTS: Final[List[str]] = ["pywattbox>=0.7.2"]
+REQUIREMENTS: Final[list[str]] = ["pywattbox>=0.7.2"]
 
 _LOGGER = logging.getLogger(__name__)
 
-ALL_SENSOR_TYPES: Final[List[str]] = [*BINARY_SENSOR_TYPES.keys(), *SENSOR_TYPES.keys()]
+ALL_SENSOR_TYPES: Final[list[str]] = [*BINARY_SENSOR_TYPES.keys(), *SENSOR_TYPES.keys()]
 
 WATTBOX_HOST_SCHEMA = vol.Schema(
     {
