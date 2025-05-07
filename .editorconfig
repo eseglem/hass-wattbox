@@ -9,6 +9,3 @@ charset = utf-8
 
 [*.{json,yaml,yml}]
 indent_size = 2
-
-[Makefile]
-indent_style = tab

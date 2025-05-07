@@ -1,16 +1,15 @@
 """Sensor platform for wattbox."""
 
 import logging
-from typing import List, Union
 from datetime import timedelta
 
 from homeassistant.components.integration.sensor import IntegrationSensor
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import CONF_NAME, CONF_RESOURCES, STATE_UNKNOWN, UnitOfTime
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from homeassistant.exceptions import PlatformNotReady
 
 from .const import SENSOR_TYPES
 from .entity import WattBoxEntity
@@ -28,7 +27,7 @@ async def async_setup_platform(
     try:
         conf_name: str = discovery_info[CONF_NAME]
         clean_name = conf_name.replace(" ", "_").lower()
-        entities: List[Union[WattBoxSensor, IntegrationSensor]] = []
+        entities: list[WattBoxSensor | IntegrationSensor] = []
 
         resource: str
         for resource in discovery_info[CONF_RESOURCES]:
@@ -56,7 +55,7 @@ async def async_setup_platform(
             )
         )
 
-        await async_add_entities(entities)
+        async_add_entities(entities)
     except Exception as err:
         _LOGGER.error("Error setting up sensor platform: %s", err)
         raise PlatformNotReady from err

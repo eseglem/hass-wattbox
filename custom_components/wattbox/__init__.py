@@ -4,6 +4,7 @@ Component to integrate with wattbox.
 For more details about this component, please refer to
 https://github.com/eseglem/hass-wattbox/
 """
+
 import logging
 from datetime import datetime
 from functools import partial
@@ -21,12 +22,12 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import ConfigType
 from pywattbox.base import BaseWattBox
-from homeassistant.exceptions import PlatformNotReady
 
 from .const import (
     BINARY_SENSOR_TYPES,
@@ -45,11 +46,11 @@ from .const import (
     TOPIC_UPDATE,
 )
 
-REQUIREMENTS: Final[List[str]] = ["pywattbox>=0.7.2"]
+REQUIREMENTS: Final[list[str]] = ["pywattbox>=0.7.2"]
 
 _LOGGER = logging.getLogger(__name__)
 
-ALL_SENSOR_TYPES: Final[List[str]] = [*BINARY_SENSOR_TYPES.keys(), *SENSOR_TYPES.keys()]
+ALL_SENSOR_TYPES: Final[list[str]] = [*BINARY_SENSOR_TYPES.keys(), *SENSOR_TYPES.keys()]
 
 WATTBOX_HOST_SCHEMA = vol.Schema(
     {
