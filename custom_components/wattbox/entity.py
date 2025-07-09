@@ -27,7 +27,7 @@ class WattBoxEntity(Entity):
             identifiers={(DOMAIN, self._wattbox.serial_number)},
             name=name,
             manufacturer="WattBox",
-            model=getattr(self._wattbox, "model", None) or "WattBox",
+            model=getattr(self._wattbox, "hardware_version", None) or "WattBox",
             sw_version=getattr(self._wattbox, "firmware_version", None),
             serial_number=self._wattbox.serial_number,
             configuration_url=f"http://{self._wattbox.host}:{self._wattbox.port}"
