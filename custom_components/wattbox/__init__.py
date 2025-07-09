@@ -5,6 +5,7 @@ For more details about this component, please refer to
 https://github.com/eseglem/hass-wattbox/
 """
 
+import asyncio
 import logging
 from datetime import datetime
 from functools import partial
@@ -22,6 +23,7 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import async_dispatcher_send
@@ -82,7 +84,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     hass.data[DOMAIN_DATA] = {}
 
-    for wattbox_host in config[DOMAIN]:
+    # Only process YAML config if it exists
+    domain_config = config.get(DOMAIN, [])
+    if domain_config:
+        _LOGGER.debug("Found YAML configuration for %d WattBox device(s)", len(domain_config))
+    else:
+        _LOGGER.debug("No YAML configuration found, will rely on config entries")
+    
+    for wattbox_host in domain_config:
         _LOGGER.debug(repr(wattbox_host))
         # Create DATA dict
         host = wattbox_host.get(CONF_HOST)
@@ -152,3 +161,73 @@ async def update_data(_dt: datetime, hass: HomeAssistant, name: str) -> None:
         async_dispatcher_send(hass, TOPIC_UPDATE.format(DOMAIN, name))
     except Exception as error:
         _LOGGER.error("Could not update data - %s", error)
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up WattBox from a config entry."""
+    if DOMAIN_DATA not in hass.data:
+        hass.data[DOMAIN_DATA] = {}
+
+    # Extract configuration
+    host = entry.data[CONF_HOST]
+    port = entry.data[CONF_PORT]
+    username = entry.data[CONF_USERNAME]
+    password = entry.data[CONF_PASSWORD]
+    name = entry.data[CONF_NAME]
+    scan_interval = entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+
+    wattbox: BaseWattBox
+    try:
+        if port in (22, 23):
+            _LOGGER.debug("Importing IP Wattbox")
+            from pywattbox.ip_wattbox import async_create_ip_wattbox
+
+            _LOGGER.debug("Creating IP WattBox")
+            wattbox = await async_create_ip_wattbox(
+                host=host, user=username, password=password, port=port
+            )
+        else:
+            _LOGGER.debug("Importing HTTP Wattbox")
+            from pywattbox.http_wattbox import async_create_http_wattbox
+
+            _LOGGER.debug("Creating HTTP WattBox")
+            wattbox = await async_create_http_wattbox(
+                host=host, user=username, password=password, port=port
+            )
+    except Exception as error:
+        _LOGGER.error("Error creating WattBox instance: %s", error)
+        raise PlatformNotReady from error
+    
+    hass.data[DOMAIN_DATA][name] = wattbox
+
+    # Forward entry setup to platforms
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Use the scan interval to trigger updates
+    async_track_time_interval(
+        hass, partial(update_data, hass=hass, name=name), scan_interval
+    )
+
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    name = entry.data[CONF_NAME]
+    
+    # Unload platforms
+    unload_ok = all(
+        await asyncio.gather(
+            *[
+                hass.config_entries.async_forward_entry_unload(entry, platform)
+                for platform in PLATFORMS
+            ]
+        )
+    )
+    
+    if unload_ok:
+        # Remove the wattbox from data
+        if name in hass.data[DOMAIN_DATA]:
+            del hass.data[DOMAIN_DATA][name]
+
+    return unload_ok

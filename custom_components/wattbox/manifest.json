@@ -4,6 +4,7 @@
   "codeowners": [
     "@eseglem"
   ],
+  "config_flow": true,
   "dependencies": [
     "network",
     "integration"

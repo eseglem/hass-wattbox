@@ -5,6 +5,7 @@ import logging
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.const import CONF_NAME, CONF_RESOURCES
 from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
@@ -15,13 +16,44 @@ from .entity import WattBoxEntity
 _LOGGER = logging.getLogger(__name__)
 
 
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up WattBox binary sensors from a config entry."""
+    try:
+        name = entry.data[CONF_NAME]
+        entities = []
+
+        # Get available resources from entry data or use all binary sensor types
+        resources = entry.data.get(CONF_RESOURCES, list(BINARY_SENSOR_TYPES.keys()))
+
+        for resource in resources:
+            sensor_type = resource.lower()
+
+            if sensor_type not in BINARY_SENSOR_TYPES:
+                continue
+
+            try:
+                entities.append(WattBoxBinarySensor(hass, name, sensor_type))
+            except Exception as err:
+                _LOGGER.error("Failed to append WattBoxBinarySensor: %s", err)
+                raise PlatformNotReady from err
+
+        async_add_entities(entities)
+    except Exception as err:
+        _LOGGER.error("Error setting up binary_sensor platform: %s", err)
+        raise PlatformNotReady from err
+
+
 async def async_setup_platform(
     hass: HomeAssistant,
     _config: ConfigType,
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType,
 ) -> None:
-    """Setup binary_sensor platform."""
+    """Setup binary_sensor platform (legacy YAML support)."""
     try:
         name = discovery_info[CONF_NAME]
         entities = []

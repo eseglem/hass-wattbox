@@ -7,6 +7,7 @@ from typing import Any
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
@@ -28,13 +29,72 @@ def validate_regex(config: ConfigType, key: str) -> re.Pattern[str] | None:
     return None
 
 
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up WattBox switches from a config entry."""
+    try:
+        name: str = entry.data[CONF_NAME]
+
+        entities: list[WattBoxEntity] = []
+        wattbox: BaseWattBox = hass.data[DOMAIN_DATA][name]
+
+        # For config entries, we'll include all outlets by default
+        # TODO: Add options for name_regexp and skip_regexp in config flow
+        name_regexp = None
+        skip_regexp = None
+
+        skipped_an_outlet = False
+        for i, outlet in wattbox.outlets.items():
+            outlet_name = outlet.name or ""
+
+            # Check to skip outlets
+            if skip_regexp and skip_regexp.search(outlet_name):
+                _LOGGER.debug("Skipping Outlet: %s - %s", i, outlet_name)
+                skipped_an_outlet = True
+                continue
+
+            # Check outlet name pattern
+            if name_regexp and not name_regexp.search(outlet_name):
+                _LOGGER.debug("Not including Outlet: %s - %s", i, outlet_name)
+                continue
+
+            try:
+                entities.append(WattBoxBinarySwitch(hass, name, i, outlet_name))
+            except Exception as err:
+                _LOGGER.error("Failed to append WattBoxBinarySwitch: %s", err)
+                raise PlatformNotReady from err
+
+        # Add the master switch if no outlets were skipped
+        if not skipped_an_outlet:
+            entities.append(WattBoxMasterSwitch(hass, name))
+        else:
+            _LOGGER.debug(
+                "Skipping master switch because an outlet was skipped for %s", name
+            )
+
+        if skipped_an_outlet:
+            _LOGGER.warning(
+                "Some outlets were skipped. "
+                "Check your settings for %s if this was unintentional.",
+                CONF_SKIP_REGEXP,
+            )
+
+        async_add_entities(entities)
+    except Exception as err:
+        _LOGGER.error("Error setting up switch platform: %s", err)
+        raise PlatformNotReady from err
+
+
 async def async_setup_platform(
     hass: HomeAssistant,
     config: ConfigType,
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType,
 ) -> None:
-    """Setup switch platform."""
+    """Setup switch platform (legacy YAML support)."""
     try:
         name: str = discovery_info[CONF_NAME]
 

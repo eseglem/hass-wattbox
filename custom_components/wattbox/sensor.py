@@ -7,6 +7,7 @@ from homeassistant.components.integration.sensor import IntegrationSensor
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import CONF_NAME, CONF_RESOURCES, STATE_UNKNOWN, UnitOfTime
 from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
@@ -17,13 +18,59 @@ from .entity import WattBoxEntity
 _LOGGER = logging.getLogger(__name__)
 
 
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up WattBox sensors from a config entry."""
+    try:
+        conf_name: str = entry.data[CONF_NAME]
+        clean_name = conf_name.replace(" ", "_").lower()
+        entities: list[WattBoxSensor | IntegrationSensor] = []
+
+        # Get available resources from entry data or use all sensor types
+        resources = entry.data.get(CONF_RESOURCES, list(SENSOR_TYPES.keys()))
+
+        resource: str
+        for resource in resources:
+            if (sensor_type := resource.lower()) not in SENSOR_TYPES:
+                continue
+
+            try:
+                entities.append(WattBoxSensor(hass, conf_name, sensor_type))
+            except Exception as err:
+                _LOGGER.error("Failed to append WattBoxSensor: %s", err)
+                raise PlatformNotReady from err
+
+        # TODO: Add a setting for this, default to true?
+        # Add an IntegrationSensor, so end users don't have to manually configure it.
+        entities.append(
+            IntegrationSensor(
+                integration_method="trapezoidal",
+                name=f"{conf_name} Total Energy",
+                round_digits=2,
+                max_sub_interval=timedelta(minutes=5),
+                source_entity=f"sensor.{clean_name}_power",
+                unique_id=f"{clean_name}_total_energy",
+                unit_prefix="k",
+                unit_time=UnitOfTime.HOURS,
+            )
+        )
+
+        async_add_entities(entities)
+    except Exception as err:
+        _LOGGER.error("Error setting up sensor platform: %s", err)
+        raise PlatformNotReady from err
+
+
 async def async_setup_platform(
     hass: HomeAssistant,
     _config: ConfigType,
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType,
 ) -> None:
-    """Setup sensor platform."""
+    """Setup sensor platform (legacy YAML support)."""
     try:
         conf_name: str = discovery_info[CONF_NAME]
         clean_name = conf_name.replace(" ", "_").lower()

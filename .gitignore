@@ -13,3 +13,5 @@ coverage.xml
 # Home Assistant configuration
 config/*
 !config/configuration.yaml
+DEVICE_REGISTRY_IMPLEMENTATION.md
+TESTING_GUIDE.md

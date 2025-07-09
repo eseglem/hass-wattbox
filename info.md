@@ -10,7 +10,16 @@
 
 _Component to integrate with [WattBox][wattbox]._
 
+**New in v0.10.0: UI Configuration & Device Registry Support!**
+
+This component now supports:
+- ✅ **UI-based setup** through the Integrations page
+- ✅ **Device registry** - each WattBox appears as a proper device
+- ✅ **Backward compatibility** with YAML configuration
+
 This component should work with or without a battery. It reports all values available in the API, and creates outlets for each plug based on the API return.
+
+Each WattBox device now appears as a single device in Home Assistant with all its entities (sensors, binary sensors, switches) grouped underneath it. This makes organization much cleaner and provides better device management.
 
 It also creates a master switch that should function the same as the master switch on the unit. It will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly. I have not found an API to control it yet.
 
@@ -21,7 +30,13 @@ Be careful, if the WattBox controls the power to its own networking equipment yo
 ## Installation
 
 1. Click install.
-1. Configure via `configuration.yaml`
+1. In Home Assistant, go to **Configuration → Integrations**
+1. Click **"Add Integration"** and search for **"WattBox"**
+1. Enter your WattBox connection details and click **Submit**
+
+### Legacy YAML Configuration
+
+If you prefer YAML configuration, you can still configure via `configuration.yaml`:
 
 ```
 wattbox:
