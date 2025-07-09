@@ -10,7 +10,7 @@
 
 _Component to integrate with [WattBox][wattbox]._
 
-**New in v0.10.0: UI Configuration & Device Registry Support!**
+**New in v0.20.0: UI Configuration & Device Registry Support!**
 
 This component now supports:
 - ✅ **UI-based setup** through the Integrations page
