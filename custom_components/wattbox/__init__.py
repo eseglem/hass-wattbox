@@ -13,6 +13,7 @@ from typing import Final, List
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
@@ -23,7 +24,6 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import async_dispatcher_send
@@ -87,10 +87,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # Only process YAML config if it exists
     domain_config = config.get(DOMAIN, [])
     if domain_config:
-        _LOGGER.debug("Found YAML configuration for %d WattBox device(s)", len(domain_config))
+        _LOGGER.debug(
+            "Found YAML configuration for %d WattBox device(s)", len(domain_config)
+        )
     else:
         _LOGGER.debug("No YAML configuration found, will rely on config entries")
-    
+
     for wattbox_host in domain_config:
         _LOGGER.debug(repr(wattbox_host))
         # Create DATA dict
@@ -197,7 +199,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception as error:
         _LOGGER.error("Error creating WattBox instance: %s", error)
         raise PlatformNotReady from error
-    
+
     hass.data[DOMAIN_DATA][name] = wattbox
 
     # Forward entry setup to platforms
@@ -214,7 +216,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     name = entry.data[CONF_NAME]
-    
+
     # Unload platforms
     unload_ok = all(
         await asyncio.gather(
@@ -224,7 +226,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             ]
         )
     )
-    
+
     if unload_ok:
         # Remove the wattbox from data
         if name in hass.data[DOMAIN_DATA]:

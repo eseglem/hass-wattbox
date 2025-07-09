@@ -5,9 +5,9 @@ from datetime import timedelta
 
 from homeassistant.components.integration.sensor import IntegrationSensor
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, CONF_RESOURCES, STATE_UNKNOWN, UnitOfTime
 from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
@@ -150,7 +150,7 @@ class WattBoxIntegrationSensor(IntegrationSensor):
         # Use a default max_sub_interval if none provided
         if max_sub_interval is None:
             max_sub_interval = timedelta(minutes=5)
-        
+
         # Initialize IntegrationSensor with all required parameters
         super().__init__(
             integration_method=integration_method,
@@ -162,18 +162,21 @@ class WattBoxIntegrationSensor(IntegrationSensor):
             unit_time=unit_time,
             max_sub_interval=max_sub_interval,
         )
-        
+
         # Get the WattBox instance to create device info
         self._wattbox = hass.data[DOMAIN_DATA][name]
-        
+
         # Set device info manually
         from homeassistant.helpers.entity import DeviceInfo
+
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._wattbox.serial_number)},
             name=name,
             manufacturer="WattBox",
-            model=getattr(self._wattbox, 'model', None) or "WattBox",
-            sw_version=getattr(self._wattbox, 'firmware_version', None),
+            model=getattr(self._wattbox, "model", None) or "WattBox",
+            sw_version=getattr(self._wattbox, "firmware_version", None),
             serial_number=self._wattbox.serial_number,
-            configuration_url=f"http://{self._wattbox.host}:{self._wattbox.port}" if hasattr(self._wattbox, 'host') and hasattr(self._wattbox, 'port') else None,
+            configuration_url=f"http://{self._wattbox.host}:{self._wattbox.port}"
+            if hasattr(self._wattbox, "host") and hasattr(self._wattbox, "port")
+            else None,
         )

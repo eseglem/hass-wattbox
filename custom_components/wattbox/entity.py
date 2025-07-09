@@ -5,7 +5,7 @@ from typing import Any, Literal
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import Entity, DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, Entity
 from pywattbox.base import BaseWattBox
 
 from .const import DOMAIN, DOMAIN_DATA, TOPIC_UPDATE
@@ -27,10 +27,12 @@ class WattBoxEntity(Entity):
             identifiers={(DOMAIN, self._wattbox.serial_number)},
             name=name,
             manufacturer="WattBox",
-            model=getattr(self._wattbox, 'model', None) or "WattBox",
-            sw_version=getattr(self._wattbox, 'firmware_version', None),
+            model=getattr(self._wattbox, "model", None) or "WattBox",
+            sw_version=getattr(self._wattbox, "firmware_version", None),
             serial_number=self._wattbox.serial_number,
-            configuration_url=f"http://{self._wattbox.host}:{self._wattbox.port}" if hasattr(self._wattbox, 'host') and hasattr(self._wattbox, 'port') else None,
+            configuration_url=f"http://{self._wattbox.host}:{self._wattbox.port}"
+            if hasattr(self._wattbox, "host") and hasattr(self._wattbox, "port")
+            else None,
         )
 
     async def async_added_to_hass(self) -> None:
