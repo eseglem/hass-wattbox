@@ -10,26 +10,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from pywattbox.base import BaseWattBox, Outlet
+from .switch import validate_regex
 
-from .const import (
-    CONF_NAME_REGEXP,
-    CONF_SKIP_REGEXP,
-    DOMAIN_DATA,
-    RESTART_ICON,
-)
+from .const import CONF_NAME_REGEXP, CONF_SKIP_REGEXP, DOMAIN_DATA, RESTART_ICON
 from .entity import WattBoxEntity
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def validate_regex(config: ConfigType, key: str) -> re.Pattern[str] | None:
-    regexp_str: str = config.get(key, "")
-    if regexp_str:
-        try:
-            return re.compile(regexp_str)
-        except re.error:
-            _LOGGER.error("Invalid %s: %s", key, regexp_str)
-    return None
 
 
 async def async_setup_platform(
