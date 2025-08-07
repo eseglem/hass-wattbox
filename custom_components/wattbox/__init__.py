@@ -4,6 +4,7 @@ Component to integrate with wattbox.
 For more details about this component, please refer to
 https://github.com/eseglem/hass-wattbox/
 """
+
 import logging
 from datetime import datetime
 from functools import partial
@@ -21,6 +22,7 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
@@ -44,11 +46,11 @@ from .const import (
     TOPIC_UPDATE,
 )
 
-REQUIREMENTS: Final[List[str]] = ["pywattbox>=0.7.2"]
+REQUIREMENTS: Final[list[str]] = ["pywattbox>=0.7.2"]
 
 _LOGGER = logging.getLogger(__name__)
 
-ALL_SENSOR_TYPES: Final[List[str]] = [*BINARY_SENSOR_TYPES.keys(), *SENSOR_TYPES.keys()]
+ALL_SENSOR_TYPES: Final[list[str]] = [*BINARY_SENSOR_TYPES.keys(), *SENSOR_TYPES.keys()]
 
 WATTBOX_HOST_SCHEMA = vol.Schema(
     {
@@ -90,22 +92,26 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         name = wattbox_host.get(CONF_NAME)
 
         wattbox: BaseWattBox
-        if port in (22, 23):
-            _LOGGER.debug("Importing IP Wattbox")
-            from pywattbox.ip_wattbox import async_create_ip_wattbox
+        try:
+            if port in (22, 23):
+                _LOGGER.debug("Importing IP Wattbox")
+                from pywattbox.ip_wattbox import async_create_ip_wattbox
 
-            _LOGGER.debug("Creating IP WattBox")
-            wattbox = await async_create_ip_wattbox(
-                host=host, user=username, password=password, port=port
-            )
-        else:
-            _LOGGER.debug("Importing HTTP Wattbox")
-            from pywattbox.http_wattbox import async_create_http_wattbox
+                _LOGGER.debug("Creating IP WattBox")
+                wattbox = await async_create_ip_wattbox(
+                    host=host, user=username, password=password, port=port
+                )
+            else:
+                _LOGGER.debug("Importing HTTP Wattbox")
+                from pywattbox.http_wattbox import async_create_http_wattbox
 
-            _LOGGER.debug("Creating HTTP WattBox")
-            wattbox = await async_create_http_wattbox(
-                host=host, user=username, password=password, port=port
-            )
+                _LOGGER.debug("Creating HTTP WattBox")
+                wattbox = await async_create_http_wattbox(
+                    host=host, user=username, password=password, port=port
+                )
+        except Exception as error:
+            _LOGGER.error("Error creating WattBox instance: %s", error)
+            raise PlatformNotReady from error
         hass.data[DOMAIN_DATA][name] = wattbox
 
         # Load platforms

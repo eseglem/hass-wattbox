@@ -1,10 +1,8 @@
 {
-  "name": "ludeeus/integration_blueprint",
-  "image": "mcr.microsoft.com/devcontainers/python:3.11-bullseye",
+  "name": "eseglem/hass-wattbox",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
   "postCreateCommand": "scripts/setup",
-  "forwardPorts": [
-    8123
-  ],
+  "forwardPorts": [8123],
   "portsAttributes": {
     "8123": {
       "label": "Home Assistant",
@@ -14,33 +12,40 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "ms-python.python",
-        "ms-python.vscode-pylance",
-        "ms-python.black-formatter",
-        "ms-python.mypy-type-checker",
         "charliermarsh.ruff",
         "EditorConfig.EditorConfig",
+        "github.vscode-github-actions",
+        "github.vscode-pull-request-github",
+        "ms-python.black-formatter",
+        "ms-python.mypy-type-checker",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
         "redhat.vscode-yaml",
-        "tamasfe.even-better-toml",
-        "github.vscode-github-actions"
+        "tamasfe.even-better-toml"
       ],
       "settings": {
         "files.eol": "\n",
         "editor.tabSize": 4,
-        "python.analysis.autoSearchPaths": false,
-        "editor.formatOnPaste": false,
+        "editor.formatOnPaste": true,
         "editor.formatOnSave": true,
-        "editor.formatOnType": true,
+        "editor.formatOnType": false,
         "files.trimTrailingWhitespace": true,
+        "python.analysis.typeCheckingMode": "basic",
+        "python.analysis.autoImportCompletions": true,
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
         "[python]": {
-          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.defaultFormatter": "charliermarsh.ruff",
           "editor.codeActionsOnSave": {
-            "source.organizeImports.ruff": true
+            "source.organizeImports.ruff": "always"
           }
         }
       }
     }
   },
   "remoteUser": "vscode",
-  "features": {}
+  "features": {
+    "ghcr.io/devcontainers-extra/features/apt-packages:1": {
+      "packages": ["ffmpeg", "libturbojpeg0", "libpcap-dev"]
+    }
+  }
 }
