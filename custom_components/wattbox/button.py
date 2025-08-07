@@ -2,7 +2,6 @@
 
 import logging
 import re
-from typing import Any, List
 
 from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
 from homeassistant.const import CONF_NAME, EntityCategory
@@ -10,10 +9,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from pywattbox.base import BaseWattBox, Outlet
-from .switch import validate_regex
 
 from .const import CONF_NAME_REGEXP, CONF_SKIP_REGEXP, DOMAIN_DATA, RESTART_ICON
 from .entity import WattBoxEntity
+from .switch import validate_regex
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +26,7 @@ async def async_setup_platform(
     """Setup button platform."""
     name: str = discovery_info[CONF_NAME]
 
-    entities: List[WattBoxEntity] = []
+    entities: list[WattBoxEntity] = []
     wattbox: BaseWattBox = hass.data[DOMAIN_DATA][name]
 
     name_regexp = validate_regex(config, CONF_NAME_REGEXP)
