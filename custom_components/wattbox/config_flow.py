@@ -53,7 +53,7 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict:
         # Try to get basic info to validate connection
         await wattbox.async_update()
 
-        return {
+        config = {
             "title": name,
             "host": host,
             "port": port,
@@ -62,10 +62,11 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict:
             "name": name,
             "serial_number": wattbox.serial_number,
         }
+        _LOGGER.debug('generated config data: %s', config)
+        return config
     except Exception as exc:
         _LOGGER.error("Error connecting to WattBox %s: %s", host, exc)
         raise CannotConnect from exc
-
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for WattBox."""

@@ -78,6 +78,26 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
+async def _async_create_wattbox(host, port, username, password):
+    """Create a WattBox instance based on port (IP or HTTP)."""
+    if port in (22, 23):
+        _LOGGER.debug("Importing IP Wattbox")
+        from pywattbox.ip_wattbox import async_create_ip_wattbox
+
+        _LOGGER.debug("Creating IP WattBox")
+        return await async_create_ip_wattbox(
+            host=host, user=username, password=password, port=port
+        )
+    else:
+        _LOGGER.debug("Importing HTTP Wattbox")
+        from pywattbox.http_wattbox import async_create_http_wattbox
+
+        _LOGGER.debug("Creating HTTP WattBox")
+        return await async_create_http_wattbox(
+            host=host, user=username, password=password, port=port
+        )
+
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up this component."""
     _LOGGER.info(STARTUP)
@@ -104,22 +124,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
         wattbox: BaseWattBox
         try:
-            if port in (22, 23):
-                _LOGGER.debug("Importing IP Wattbox")
-                from pywattbox.ip_wattbox import async_create_ip_wattbox
-
-                _LOGGER.debug("Creating IP WattBox")
-                wattbox = await async_create_ip_wattbox(
-                    host=host, user=username, password=password, port=port
-                )
-            else:
-                _LOGGER.debug("Importing HTTP Wattbox")
-                from pywattbox.http_wattbox import async_create_http_wattbox
-
-                _LOGGER.debug("Creating HTTP WattBox")
-                wattbox = await async_create_http_wattbox(
-                    host=host, user=username, password=password, port=port
-                )
+            wattbox = await _async_create_wattbox(host, port, username, password)
         except Exception as error:
             _LOGGER.error("Error creating WattBox instance: %s", error)
             raise PlatformNotReady from error
@@ -180,22 +185,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     wattbox: BaseWattBox
     try:
-        if port in (22, 23):
-            _LOGGER.debug("Importing IP Wattbox")
-            from pywattbox.ip_wattbox import async_create_ip_wattbox
-
-            _LOGGER.debug("Creating IP WattBox")
-            wattbox = await async_create_ip_wattbox(
-                host=host, user=username, password=password, port=port
-            )
-        else:
-            _LOGGER.debug("Importing HTTP Wattbox")
-            from pywattbox.http_wattbox import async_create_http_wattbox
-
-            _LOGGER.debug("Creating HTTP WattBox")
-            wattbox = await async_create_http_wattbox(
-                host=host, user=username, password=password, port=port
-            )
+        wattbox = await _async_create_wattbox(host, port, username, password)
     except Exception as error:
         _LOGGER.error("Error creating WattBox instance: %s", error)
         raise PlatformNotReady from error
