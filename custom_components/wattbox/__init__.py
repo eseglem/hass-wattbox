@@ -9,7 +9,7 @@ import asyncio
 import logging
 from datetime import datetime
 from functools import partial
-from typing import Final, List
+from typing import Final
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -28,6 +28,7 @@ from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.importlib import async_import_module
 from homeassistant.helpers.typing import ConfigType
 from pywattbox.base import BaseWattBox
 
@@ -84,16 +85,25 @@ async def _async_create_wattbox(host, port, username, password):
         _LOGGER.debug("Importing IP Wattbox")
         from pywattbox.ip_wattbox import async_create_ip_wattbox
 
+        # Pre-import the transport plugin to avoid blocking call issues
+        transport = "asyncssh" if port == 22 else "asynctelnet"
+        await async_import_module(
+            hass, f"scrapli.transport.plugins.{transport}.transport"
+        )
+
         _LOGGER.debug("Creating IP WattBox")
-        return await async_create_ip_wattbox(
+        wattbox = await async_create_ip_wattbox(
             host=host, user=username, password=password, port=port
         )
     else:
         _LOGGER.debug("Importing HTTP Wattbox")
         from pywattbox.http_wattbox import async_create_http_wattbox
 
+        # Pre-import the encoding to avoid blocking call issues
+        await async_import_module(hass, "encodings.ascii")
+
         _LOGGER.debug("Creating HTTP WattBox")
-        return await async_create_http_wattbox(
+        wattbox = await async_create_http_wattbox(
             host=host, user=username, password=password, port=port
         )
 
@@ -128,6 +138,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         except Exception as error:
             _LOGGER.error("Error creating WattBox instance: %s", error)
             raise PlatformNotReady from error
+
         hass.data[DOMAIN_DATA][name] = wattbox
 
         # Load platforms
@@ -223,3 +234,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             del hass.data[DOMAIN_DATA][name]
 
     return unload_ok
+
