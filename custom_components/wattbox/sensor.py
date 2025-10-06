@@ -153,6 +153,7 @@ class WattBoxIntegrationSensor(IntegrationSensor):
 
         # Initialize IntegrationSensor with all required parameters
         super().__init__(
+            hass=hass,
             integration_method=integration_method,
             name=sensor_name,
             round_digits=round_digits,

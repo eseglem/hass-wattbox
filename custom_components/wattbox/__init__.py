@@ -79,7 +79,7 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
-async def _async_create_wattbox(host, port, username, password):
+async def _async_create_wattbox(hass, host, port, username, password):
     """Create a WattBox instance based on port (IP or HTTP)."""
     if port in (22, 23):
         _LOGGER.debug("Importing IP Wattbox")
@@ -106,6 +106,8 @@ async def _async_create_wattbox(host, port, username, password):
         wattbox = await async_create_http_wattbox(
             host=host, user=username, password=password, port=port
         )
+
+    return wattbox
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -134,7 +136,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
         wattbox: BaseWattBox
         try:
-            wattbox = await _async_create_wattbox(host, port, username, password)
+            wattbox = await _async_create_wattbox(hass, host, port, username, password)
         except Exception as error:
             _LOGGER.error("Error creating WattBox instance: %s", error)
             raise PlatformNotReady from error
@@ -196,7 +198,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     wattbox: BaseWattBox
     try:
-        wattbox = await _async_create_wattbox(host, port, username, password)
+        wattbox = await _async_create_wattbox(hass, host, port, username, password)
     except Exception as error:
         _LOGGER.error("Error creating WattBox instance: %s", error)
         raise PlatformNotReady from error
