@@ -4,6 +4,7 @@
   "codeowners": [
     "@eseglem"
   ],
+  "config_flow": true,
   "dependencies": [
     "network",
     "integration"
@@ -22,5 +23,5 @@
   "requirements": [
     "pywattbox[http,ip]==0.9.0"
   ],
-  "version": "0.11.0"
+  "version": "0.20.0"
 }
