@@ -46,3 +46,39 @@ jobs:
           category: integration
           # Remove this 'ignore' key when you have added brand images for your integration to https://github.com/home-assistant/brands
           ignore: brands
+
+  compare-string-files:
+    name: Compare string files (ensure they are identical)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compare string file hashes
+        id: strings-comparison
+        run: |
+          FILE1="${{ github.workspace }}/custom_components/wattbox/strings.json"
+          FILE2="${{ github.workspace }}/custom_components/wattbox/translations/en.json"
+
+          if [ ! -f "$FILE1" ]; then
+            echo "Error: File 1 not found at $FILE1"
+            exit 1
+          fi
+          if [ ! -f "$FILE2" ]; then
+            echo "Error: File 2 not found at $FILE2"
+            exit 1
+          fi
+
+          HASH1=$(md5sum "$FILE1" | awk '{print $1}')
+          HASH2=$(md5sum "$FILE2" | awk '{print $1}')
+
+          if [ "$HASH1" = "$HASH2" ]; then
+            echo "Files are identical."
+            echo "identical=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          else
+            echo "Files are NOT identical."
+            echo "identical=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+        shell: bash
