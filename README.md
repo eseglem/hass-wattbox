@@ -14,7 +14,27 @@
 
 Easiest way to install this component is through [HACS][hacs].
 
-Configuration through `configuration.yaml`. UI based configuration not available yet.
+## Configuration
+
+### UI Configuration (Recommended)
+
+Starting with version 0.20.0, this integration supports UI-based configuration through the Home Assistant interface:
+
+1. Go to Configuration → Integrations
+2. Click "Add Integration"
+3. Search for "WattBox"
+4. Enter your WattBox connection details:
+   - **Host**: IP address of your WattBox device
+   - **Port**: Port number (default 80 for HTTP, 22/23 for SSH)
+   - **Username**: Authentication username (default: wattbox)
+   - **Password**: Authentication password (default: wattbox)
+   - **Name**: Friendly name for your WattBox device
+
+Each WattBox will now appear as a **device** in Home Assistant with all its entities (sensors, switches, etc.) grouped under it.
+
+### YAML Configuration (Legacy)
+
+Configuration through `configuration.yaml` is still supported for backward compatibility.
 
 Example Config:
 
