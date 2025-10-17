@@ -180,7 +180,7 @@ async def update_data(_dt: datetime, hass: HomeAssistant, name: str) -> None:
         # Send update to topic for entities to see
         async_dispatcher_send(hass, TOPIC_UPDATE.format(DOMAIN, name))
     except Exception as error:
-        _LOGGER.error("Could not update data - %s", error)
+        _LOGGER.error("Could not update data for %s (%s) - %s", repr(wattbox), wattbox, error)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
