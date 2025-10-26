@@ -143,9 +143,9 @@ class WattBoxIntegrationSensor(IntegrationSensor):
         source_entity: str,
         unique_id: str,
         unit_prefix: str,
-        unit_time: str,
+        unit_time: UnitOfTime,
         round_digits: int = 2,
-        max_sub_interval: timedelta = None,
+        max_sub_interval: timedelta | None = None,
     ) -> None:
         # Use a default max_sub_interval if none provided
         if max_sub_interval is None:
@@ -177,7 +177,9 @@ class WattBoxIntegrationSensor(IntegrationSensor):
             model=getattr(self._wattbox, "hardware_version", None) or "WattBox",
             sw_version=getattr(self._wattbox, "firmware_version", None),
             serial_number=self._wattbox.serial_number,
-            configuration_url=f"http://{self._wattbox.host}:{self._wattbox.port}"
-            if hasattr(self._wattbox, "host") and hasattr(self._wattbox, "port")
-            else None,
+            configuration_url=(
+                f"http://{self._wattbox.host}:{self._wattbox.port}"
+                if hasattr(self._wattbox, "host") and hasattr(self._wattbox, "port")
+                else None
+            ),
         )

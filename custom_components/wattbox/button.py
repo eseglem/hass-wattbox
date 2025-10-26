@@ -94,9 +94,9 @@ class WattBoxResetButton(WattBoxEntity, ButtonEntity):
         return RESTART_ICON
 
     @property
-    def device_class(self) -> str:
+    def device_class(self) -> ButtonDeviceClass | None:
         return ButtonDeviceClass.RESTART
 
     @property
-    def entity_category(self):
+    def entity_category(self) -> EntityCategory | None:
         return EntityCategory.CONFIG
