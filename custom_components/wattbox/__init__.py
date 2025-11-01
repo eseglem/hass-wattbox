@@ -79,7 +79,9 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
-async def _async_create_wattbox(hass, host, port, username, password):
+async def _async_create_wattbox(
+    hass: HomeAssistant, host: str, port: int, username: str, password: str
+) -> BaseWattBox:
     """Create a WattBox instance based on port (IP or HTTP)."""
     if port in (22, 23):
         _LOGGER.debug("Importing IP Wattbox")
@@ -92,7 +94,7 @@ async def _async_create_wattbox(hass, host, port, username, password):
         )
 
         _LOGGER.debug("Creating IP WattBox")
-        wattbox = await async_create_ip_wattbox(
+        wattbox: BaseWattBox = await async_create_ip_wattbox(
             host=host, user=username, password=password, port=port
         )
     else:
@@ -236,4 +238,3 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             del hass.data[DOMAIN_DATA][name]
 
     return unload_ok
-

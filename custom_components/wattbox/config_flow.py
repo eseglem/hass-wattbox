@@ -1,6 +1,7 @@
 """Config flow for WattBox integration."""
 
 import logging
+from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries, exceptions
@@ -12,6 +13,7 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.core import HomeAssistant
+from pywattbox.base import BaseWattBox
 
 from .const import (
     DEFAULT_NAME,
@@ -40,7 +42,7 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict:
         if port in (22, 23):
             from pywattbox.ip_wattbox import async_create_ip_wattbox
 
-            wattbox = await async_create_ip_wattbox(
+            wattbox: BaseWattBox = await async_create_ip_wattbox(
                 host=host, user=username, password=password, port=port
             )
         else:
@@ -62,18 +64,19 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict:
             "name": name,
             "serial_number": wattbox.serial_number,
         }
-        _LOGGER.debug('generated config data: %s', config)
+        _LOGGER.debug("generated config data: %s", config)
         return config
     except Exception as exc:
         _LOGGER.error("Error connecting to WattBox %s: %s", host, exc)
         raise CannotConnect from exc
+
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for WattBox."""
 
     VERSION = 1
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_user(self, user_input: Any | None = None) -> Any:
         """Handle the initial step."""
         errors = {}
         if user_input is not None:
