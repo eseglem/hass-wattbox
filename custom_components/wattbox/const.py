@@ -1,32 +1,25 @@
 """Constants for wattbox."""
 
 from datetime import timedelta
-from typing import Dict, Final, List, TypedDict
+from typing import Final, TypedDict
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.const import (
-    ELECTRIC_POTENTIAL_VOLT,
     PERCENTAGE,
-    POWER_WATT,
-    TIME_MINUTES,
+    UnitOfElectricCurrent,
+    UnitOfElectricPotential,
+    UnitOfPower,
+    UnitOfTime,
 )
 
 # Base component constants
 DOMAIN: Final[str] = "wattbox"
 DOMAIN_DATA: Final[str] = f"{DOMAIN}_data"
-VERSION: Final[str] = "0.8.2"
-PLATFORMS: Final[List[str]] = ["binary_sensor", "sensor", "switch"]
-REQUIRED_FILES: Final[List[str]] = [
-    "binary_sensor.py",
-    "const.py",
-    "sensor.py",
-    "switch.py",
-]
+VERSION: Final[str] = "0.20.0"
+PLATFORMS: Final[list[str]] = ["binary_sensor", "button", "sensor", "switch"]
 ISSUE_URL: Final[str] = "https://github.com/eseglem/hass-wattbox/issues"
 
-STARTUP: Final[
-    str
-] = f"""
+STARTUP: Final[str] = f"""
 -------------------------------------------------------------------
 {DOMAIN}
 Version: {VERSION}
@@ -39,6 +32,7 @@ If you have any issues with this you need to open an issue here:
 # Icons
 ICON: Final[str] = "mdi:power"
 PLUG_ICON: Final[str] = "mdi:power-socket-us"
+RESTART_ICON: Final[str] = "mdi:restart"
 
 # Defaults
 DEFAULT_NAME: Final[str] = "WattBox"
@@ -49,6 +43,10 @@ DEFAULT_SCAN_INTERVAL: Final[timedelta] = timedelta(seconds=30)
 
 TOPIC_UPDATE: Final[str] = "{}_data_update_{}"
 
+# config options
+CONF_NAME_REGEXP: Final[str] = "name_regexp"
+CONF_SKIP_REGEXP: Final[str] = "skip_regexp"
+
 
 class _BinarySensorDict(TypedDict):
     """TypedDict for use in BINARY_SENSOR_TYPES"""
@@ -58,7 +56,7 @@ class _BinarySensorDict(TypedDict):
     flipped: bool
 
 
-BINARY_SENSOR_TYPES: Final[Dict[str, _BinarySensorDict]] = {
+BINARY_SENSOR_TYPES: Final[dict[str, _BinarySensorDict]] = {
     "audible_alarm": {
         "name": "Audible Alarm",
         "device_class": BinarySensorDeviceClass.SOUND,
@@ -97,27 +95,31 @@ class _SensorTypeDict(TypedDict):
     icon: str
 
 
-SENSOR_TYPES: Final[Dict[str, _SensorTypeDict]] = {
+SENSOR_TYPES: Final[dict[str, _SensorTypeDict]] = {
     "battery_charge": {
         "name": "Battery Charge",
         "unit": PERCENTAGE,
         "icon": "mdi:battery",
     },
     "battery_load": {"name": "Battery Load", "unit": PERCENTAGE, "icon": "mdi:gauge"},
-    "current_value": {"name": "Current", "unit": "A", "icon": "mdi:current-ac"},
+    "current_value": {
+        "name": "Current",
+        "unit": UnitOfElectricCurrent.AMPERE,
+        "icon": "mdi:current-ac",
+    },
     "est_run_time": {
         "name": "Estimated Run Time",
-        "unit": TIME_MINUTES,
+        "unit": UnitOfTime.MINUTES,
         "icon": "mdi:timer",
     },
     "power_value": {
         "name": "Power",
-        "unit": POWER_WATT,
+        "unit": UnitOfPower.WATT,
         "icon": "mdi:lightbulb-outline",
     },
     "voltage_value": {
         "name": "Voltage",
-        "unit": ELECTRIC_POTENTIAL_VOLT,
+        "unit": UnitOfElectricPotential.VOLT,
         "icon": "mdi:lightning-bolt-circle",
     },
 }

@@ -1,4 +1,5 @@
 {
-    "name": "Wattbox",
-    "homeassistant": "2022.3.0"
+  "name": "Wattbox",
+  "homeassistant": "2025.10.0",
+  "hacs": "2.0.1"
 }
