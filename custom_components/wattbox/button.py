@@ -4,8 +4,10 @@ import logging
 import re
 
 from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from pywattbox.base import BaseWattBox, Outlet
@@ -17,13 +19,53 @@ from .switch import validate_regex
 _LOGGER = logging.getLogger(__name__)
 
 
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+) -> None:
+    """Setup button platform."""
+    try:
+        name: str = entry.data[CONF_NAME]
+
+        entities: list[WattBoxEntity] = []
+        wattbox: BaseWattBox = hass.data[DOMAIN_DATA][name]
+
+        # For config entries, we'll include all outlets by default
+        # TODO: Add options for name_regexp and skip_regexp in config flow
+        name_regexp = None
+        skip_regexp = None
+
+        for i, outlet in wattbox.outlets.items():
+            outlet_name = outlet.name or ""
+
+            # Skip outlets if they match regex
+            if skip_regexp and skip_regexp.search(outlet_name):
+                _LOGGER.debug("Skipping outlet #%s - %s", i, outlet_name)
+                continue
+
+            if name_regexp:
+                if matched := name_regexp.search(outlet_name):
+                    outlet_name = matched.group()
+                    try:
+                        outlet_name = matched.group(1)
+                    except re.error:
+                        pass
+
+            _LOGGER.debug("Adding outlet reset #%s - %s", i, outlet_name)
+            entities.append(WattBoxResetButton(hass, name, i, outlet_name))
+
+        async_add_entities(entities)
+    except Exception as err:
+        _LOGGER.error("Error setting up button platform: %s", err)
+        raise PlatformNotReady from err
+
+
 async def async_setup_platform(
     hass: HomeAssistant,
     config: ConfigType,
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType,
 ) -> None:
-    """Setup button platform."""
+    """Setup button platform. (legacy YAML support)."""
     name: str = discovery_info[CONF_NAME]
 
     entities: list[WattBoxEntity] = []
