@@ -18,7 +18,7 @@ Easiest way to install this component is through [HACS][hacs].
 
 ### UI Configuration (Recommended)
 
-Starting with version 0.20.0, this integration supports UI-based configuration through the Home Assistant interface:
+Starting with version 1.0.0, this integration supports UI-based configuration through the Home Assistant interface:
 
 1. Go to Configuration → Integrations
 2. Click "Add Integration"
