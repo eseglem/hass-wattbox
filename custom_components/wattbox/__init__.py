@@ -24,7 +24,7 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import PlatformNotReady
+from homeassistant.exceptions import ConfigEntryNotReady, PlatformNotReady
 from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
@@ -48,6 +48,7 @@ from .const import (
     STARTUP,
     TOPIC_UPDATE,
 )
+from .coordinator import WattBoxCoordinator
 
 REQUIREMENTS: Final[list[str]] = ["pywattbox>=0.7.2"]
 
@@ -203,17 +204,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         wattbox = await _async_create_wattbox(hass, host, port, username, password)
     except Exception as error:
         _LOGGER.error("Error creating WattBox instance: %s", error)
-        raise PlatformNotReady from error
+        raise ConfigEntryNotReady from error
 
     hass.data[DOMAIN_DATA][name] = wattbox
 
+    # Create coordinator for polling and availability tracking
+    coordinator = WattBoxCoordinator(hass, wattbox, name, scan_interval)
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except ConfigEntryNotReady:
+        raise
+
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][name] = coordinator
+
     # Forward entry setup to platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    # Use the scan interval to trigger updates
-    async_track_time_interval(
-        hass, partial(update_data, hass=hass, name=name), scan_interval
-    )
 
     return True
 
@@ -236,5 +242,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Remove the wattbox from data
         if name in hass.data[DOMAIN_DATA]:
             del hass.data[DOMAIN_DATA][name]
+        # Remove the coordinator
+        if DOMAIN in hass.data and name in hass.data[DOMAIN]:
+            del hass.data[DOMAIN][name]
 
     return unload_ok

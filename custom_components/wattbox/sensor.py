@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
+from homeassistant.util import slugify
 
 from .const import DOMAIN, DOMAIN_DATA, SENSOR_TYPES
 from .entity import WattBoxEntity
@@ -26,7 +27,7 @@ async def async_setup_entry(
     """Set up WattBox sensors from a config entry."""
     try:
         conf_name: str = entry.data[CONF_NAME]
-        clean_name = conf_name.replace(" ", "_").lower()
+        clean_name = slugify(conf_name)
         entities: list[WattBoxSensor | WattBoxIntegrationSensor] = []
 
         # Get available resources from entry data or use all sensor types
@@ -75,7 +76,7 @@ async def async_setup_platform(
     """Setup sensor platform (legacy YAML support)."""
     try:
         conf_name: str = discovery_info[CONF_NAME]
-        clean_name = conf_name.replace(" ", "_").lower()
+        clean_name = slugify(conf_name)
         entities: list[WattBoxSensor | WattBoxIntegrationSensor] = []
 
         resource: str
