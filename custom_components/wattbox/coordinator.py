@@ -20,6 +20,7 @@ class WattBoxCoordinator(DataUpdateCoordinator[BaseWattBox]):
     """
 
     wattbox: BaseWattBox
+    mac_address: str | None
 
     def __init__(
         self,
@@ -27,6 +28,7 @@ class WattBoxCoordinator(DataUpdateCoordinator[BaseWattBox]):
         wattbox: BaseWattBox,
         name: str,
         scan_interval: timedelta,
+        mac_address: str | None = None,
     ) -> None:
         """Initialize the coordinator."""
         super().__init__(
@@ -36,6 +38,7 @@ class WattBoxCoordinator(DataUpdateCoordinator[BaseWattBox]):
             update_interval=scan_interval,
         )
         self.wattbox = wattbox
+        self.mac_address = mac_address
 
     async def _async_update_data(self) -> BaseWattBox:
         """Fetch data from the WattBox device.

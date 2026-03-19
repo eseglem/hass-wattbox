@@ -169,7 +169,6 @@ class WattBoxIntegrationSensor(IntegrationSensor):
         self._wattbox = hass.data[DOMAIN_DATA][name]
 
         # Set device info manually
-        from getmac import get_mac_address
         from homeassistant.const import ATTR_CONNECTIONS
         from homeassistant.helpers import device_registry as dr
         from homeassistant.helpers.entity import DeviceInfo
@@ -188,15 +187,12 @@ class WattBoxIntegrationSensor(IntegrationSensor):
             ),
         )
 
-        # Add MAC address connection if host is available
-        if hasattr(self._wattbox, "host") and self._wattbox.host:
-            try:
-                mac_address = get_mac_address(ip=self._wattbox.host)
-                if mac_address:
-                    device_info[ATTR_CONNECTIONS] = {
-                        (dr.CONNECTION_NETWORK_MAC, mac_address)
-                    }
-            except Exception:
-                pass  # MAC address lookup is optional
+        # Add MAC address as a device connection (looked up once during setup)
+        coordinator = hass.data.get(DOMAIN, {}).get(name)
+        mac_address = getattr(coordinator, "mac_address", None)
+        if mac_address:
+            device_info[ATTR_CONNECTIONS] = {
+                (dr.CONNECTION_NETWORK_MAC, mac_address)
+            }
 
         self._attr_device_info = device_info

@@ -23,6 +23,7 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
+from getmac import get_mac_address
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady, PlatformNotReady
 from homeassistant.helpers import discovery
@@ -208,12 +209,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN_DATA][name] = wattbox
 
+    # Look up MAC address once via executor (blocking ARP lookup)
+    mac_address = await hass.async_add_executor_job(
+        partial(get_mac_address, ip=host)
+    )
+
     # Create coordinator for polling and availability tracking
-    coordinator = WattBoxCoordinator(hass, wattbox, name, scan_interval)
-    try:
-        await coordinator.async_config_entry_first_refresh()
-    except ConfigEntryNotReady:
-        raise
+    coordinator = WattBoxCoordinator(
+        hass, wattbox, name, scan_interval, mac_address=mac_address
+    )
+    await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][name] = coordinator
