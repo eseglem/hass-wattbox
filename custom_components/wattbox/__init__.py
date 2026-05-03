@@ -12,7 +12,7 @@ from typing import Final
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from getmac import get_mac_address
+from getmac import get_mac_address  # type: ignore[import-not-found]
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,

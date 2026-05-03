@@ -4,7 +4,6 @@ import logging
 from collections.abc import Callable
 from typing import Any, Literal
 
-from homeassistant.const import ATTR_CONNECTIONS
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -58,7 +57,7 @@ class WattBoxEntity(Entity):
         # Add MAC address as a device connection (looked up once during setup)
         mac_address = getattr(self._coordinator, "mac_address", None)
         if mac_address:
-            device_info[ATTR_CONNECTIONS] = {(dr.CONNECTION_NETWORK_MAC, mac_address)}
+            device_info["connections"] = {(dr.CONNECTION_NETWORK_MAC, mac_address)}
 
         self._attr_device_info = device_info
 
