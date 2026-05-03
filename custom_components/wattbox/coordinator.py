@@ -24,7 +24,9 @@ def _is_auth_error(err: BaseException) -> bool:
             status = getattr(err.response, "status_code", None)
             if status in (401, 403):
                 return True
-    except ImportError:  # pragma: no cover - httpx is always installed via pywattbox[http]
+    except (
+        ImportError
+    ):  # pragma: no cover - httpx is always installed via pywattbox[http]
         pass
 
     return "auth" in type(err).__name__.lower()
@@ -71,6 +73,4 @@ class WattBoxCoordinator(DataUpdateCoordinator[BaseWattBox]):
                 raise ConfigEntryAuthFailed(
                     f"Authentication failed for WattBox: {err}"
                 ) from err
-            raise UpdateFailed(
-                f"Error communicating with WattBox: {err}"
-            ) from err
+            raise UpdateFailed(f"Error communicating with WattBox: {err}") from err
