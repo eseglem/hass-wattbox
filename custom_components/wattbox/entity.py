@@ -18,7 +18,13 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class WattBoxEntity(Entity):
-    """WattBox Entity class."""
+    """WattBox Entity base class.
+
+    Entities pull their state from the shared :class:`BaseWattBox` instance
+    that the coordinator (or legacy YAML poller) keeps fresh. On every
+    coordinator tick the entity's :meth:`_update_attrs` is invoked and the
+    state is written, mirroring the ``CoordinatorEntity`` pattern.
+    """
 
     _wattbox: BaseWattBox
     _coordinator: DataUpdateCoordinator | None
@@ -62,33 +68,43 @@ class WattBoxEntity(Entity):
     def available(self) -> bool:
         """Return True if entity is available.
 
-        When using a coordinator (config entry path), availability is
-        determined by whether the last data update succeeded. This causes
-        all entities to become unavailable when the WattBox device is
-        unreachable, and available again when it comes back.
+        When using a coordinator, availability is determined by whether the
+        last data update succeeded. The dispatcher (YAML) path has no
+        availability signal, so it is always reported as available.
         """
         if self._coordinator is not None:
             return self._coordinator.last_update_success
         return True
 
+    @callback
+    def _update_attrs(self) -> None:
+        """Populate ``_attr_*`` from ``self._wattbox``.
+
+        Subclasses override this to map device state onto entity attributes.
+        Called on every coordinator update and once during setup.
+        """
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Refresh attributes from the device snapshot and write state."""
+        self._update_attrs()
+        self.async_write_ha_state()
+
     async def async_added_to_hass(self) -> None:
-        """Register callbacks."""
-
-        @callback
-        def update() -> None:
-            """Update the state."""
-            self.async_schedule_update_ha_state(True)
-
+        """Subscribe to updates and seed initial state."""
         if self._coordinator is not None:
             # Config entry path: listen to coordinator updates
             self.async_on_remove(
-                self._coordinator.async_add_listener(update)
+                self._coordinator.async_add_listener(self._handle_coordinator_update)
             )
         else:
             # Legacy YAML path: listen to dispatcher updates
             self._async_unsub_dispatcher_connect = async_dispatcher_connect(
-                self.hass, self.topic, update
+                self.hass, self.topic, self._handle_coordinator_update
             )
+
+        # Seed initial state from whatever the device snapshot already holds.
+        self._update_attrs()
 
     async def async_will_remove_from_hass(self) -> None:
         """Disconnect dispatcher listener when removed."""
@@ -98,3 +114,4 @@ class WattBoxEntity(Entity):
             self, "_async_unsub_dispatcher_connect"
         ):
             self._async_unsub_dispatcher_connect()
+

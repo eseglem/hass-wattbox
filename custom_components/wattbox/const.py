@@ -4,6 +4,7 @@ from datetime import timedelta
 from typing import Final, TypedDict
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import (
     PERCENTAGE,
     UnitOfElectricCurrent,
@@ -93,6 +94,8 @@ class _SensorTypeDict(TypedDict):
     name: str
     unit: str
     icon: str
+    device_class: SensorDeviceClass | None
+    state_class: SensorStateClass | None
 
 
 SENSOR_TYPES: Final[dict[str, _SensorTypeDict]] = {
@@ -100,26 +103,42 @@ SENSOR_TYPES: Final[dict[str, _SensorTypeDict]] = {
         "name": "Battery Charge",
         "unit": PERCENTAGE,
         "icon": "mdi:battery",
+        "device_class": SensorDeviceClass.BATTERY,
+        "state_class": SensorStateClass.MEASUREMENT,
     },
-    "battery_load": {"name": "Battery Load", "unit": PERCENTAGE, "icon": "mdi:gauge"},
+    "battery_load": {
+        "name": "Battery Load",
+        "unit": PERCENTAGE,
+        "icon": "mdi:gauge",
+        "device_class": None,
+        "state_class": SensorStateClass.MEASUREMENT,
+    },
     "current_value": {
         "name": "Current",
         "unit": UnitOfElectricCurrent.AMPERE,
         "icon": "mdi:current-ac",
+        "device_class": SensorDeviceClass.CURRENT,
+        "state_class": SensorStateClass.MEASUREMENT,
     },
     "est_run_time": {
         "name": "Estimated Run Time",
         "unit": UnitOfTime.MINUTES,
         "icon": "mdi:timer",
+        "device_class": SensorDeviceClass.DURATION,
+        "state_class": SensorStateClass.MEASUREMENT,
     },
     "power_value": {
         "name": "Power",
         "unit": UnitOfPower.WATT,
         "icon": "mdi:lightbulb-outline",
+        "device_class": SensorDeviceClass.POWER,
+        "state_class": SensorStateClass.MEASUREMENT,
     },
     "voltage_value": {
         "name": "Voltage",
         "unit": UnitOfElectricPotential.VOLT,
         "icon": "mdi:lightning-bolt-circle",
+        "device_class": SensorDeviceClass.VOLTAGE,
+        "state_class": SensorStateClass.MEASUREMENT,
     },
 }

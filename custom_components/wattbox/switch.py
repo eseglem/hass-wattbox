@@ -7,7 +7,7 @@ from typing import Any
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
@@ -165,11 +165,12 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         self._attr_unique_id = f"{self._wattbox.serial_number}-switch-{index}"
 
     async def async_update(self) -> None:
-        """Update the sensor."""
-        # Check the data and update the value.
-        self._attr_is_on = self._outlet.status
+        """Update the sensor (legacy poll fallback)."""
+        self._update_attrs()
 
-        # Set/update attributes
+    @callback
+    def _update_attrs(self) -> None:
+        self._attr_is_on = self._outlet.status
         self._attr_extra_state_attributes["name"] = self._outlet.name
         self._attr_extra_state_attributes["method"] = self._outlet.method
         self._attr_extra_state_attributes["index"] = self._outlet.index
@@ -185,6 +186,8 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         self.async_write_ha_state()
         # Trigger the action on the wattbox.
         await self._outlet.async_turn_on()
+        if self._coordinator is not None:
+            await self._coordinator.async_request_refresh()
 
     async def async_turn_off(self, **_kwargs: Any) -> None:
         """Turn off the switch."""
@@ -197,6 +200,8 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         self.async_write_ha_state()
         # Trigger the action on the wattbox.
         await self._outlet.async_turn_off()
+        if self._coordinator is not None:
+            await self._coordinator.async_request_refresh()
 
 
 class WattBoxMasterSwitch(WattBoxBinarySwitch):
@@ -211,9 +216,12 @@ class WattBoxMasterSwitch(WattBoxBinarySwitch):
         self._attr_unique_id = f"{self._wattbox.serial_number}-switch-master"
 
     async def async_update(self) -> None:
-        """Update the sensor."""
+        """Update the sensor (legacy poll fallback)."""
+        self._update_attrs()
+
+    @callback
+    def _update_attrs(self) -> None:
         if self._outlet is not None:
-            # Check the data and update the value.
             self._attr_is_on = self._outlet.status
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -224,4 +232,4 @@ class WattBoxMasterSwitch(WattBoxBinarySwitch):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
         if self._outlet is not None:
-            await super().async_turn_on(**kwargs)
+            await super().async_turn_off(**kwargs)

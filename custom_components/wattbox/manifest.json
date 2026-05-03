@@ -6,8 +6,7 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "network",
-    "integration"
+    "network"
   ],
   "documentation": "https://github.com/eseglem/hass-wattbox",
   "integration_type": "device",

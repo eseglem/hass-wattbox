@@ -5,7 +5,6 @@ For more details about this component, please refer to
 https://github.com/eseglem/hass-wattbox/
 """
 
-import asyncio
 import logging
 from datetime import datetime
 from functools import partial
@@ -176,15 +175,20 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 async def update_data(_dt: datetime, hass: HomeAssistant, name: str) -> None:
     """Update data."""
 
-    # This is where the main logic to update platform data goes.
+    wattbox = hass.data[DOMAIN_DATA].get(name)
+    if wattbox is None:
+        _LOGGER.error("No WattBox instance found for %s", name)
+        return
+
     try:
-        wattbox = hass.data[DOMAIN_DATA][name]
         await wattbox.async_update()
         _LOGGER.debug("Updated: %s - %s", wattbox, repr(wattbox))
         # Send update to topic for entities to see
         async_dispatcher_send(hass, TOPIC_UPDATE.format(DOMAIN, name))
     except Exception as error:
-        _LOGGER.error("Could not update data for %s (%s) - %s", repr(wattbox), wattbox, error)
+        _LOGGER.error(
+            "Could not update data for %s (%s) - %s", repr(wattbox), wattbox, error
+        )
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -233,22 +237,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     name = entry.data[CONF_NAME]
 
-    # Unload platforms
-    unload_ok = all(
-        await asyncio.gather(
-            *[
-                hass.config_entries.async_forward_entry_unload(entry, platform)
-                for platform in PLATFORMS
-            ]
-        )
-    )
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
-        # Remove the wattbox from data
-        if name in hass.data[DOMAIN_DATA]:
-            del hass.data[DOMAIN_DATA][name]
-        # Remove the coordinator
-        if DOMAIN in hass.data and name in hass.data[DOMAIN]:
-            del hass.data[DOMAIN][name]
+        hass.data.get(DOMAIN_DATA, {}).pop(name, None)
+        hass.data.get(DOMAIN, {}).pop(name, None)
 
     return unload_ok

@@ -5,7 +5,7 @@ import logging
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, CONF_RESOURCES
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
@@ -92,8 +92,11 @@ class WattBoxBinarySensor(WattBoxEntity, BinarySensorEntity):
         )
 
     async def async_update(self) -> None:
-        """Update the sensor."""
-        # Check the data and update the value.
+        """Update the sensor (legacy poll fallback)."""
+        self._update_attrs()
+
+    @callback
+    def _update_attrs(self) -> None:
         value: bool | None = getattr(self._wattbox, self.sensor_type, None)
         if value is not None and self._flipped:
             value = not value

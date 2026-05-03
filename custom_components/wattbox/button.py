@@ -6,7 +6,7 @@ import re
 from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, EntityCategory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
@@ -100,6 +100,8 @@ class WattBoxResetButton(WattBoxEntity, ButtonEntity):
     """WattBox reset button class."""
 
     _attr_device_class = ButtonDeviceClass.RESTART
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_icon = RESTART_ICON
     _attr_should_poll = False
     _outlet: Outlet
 
@@ -118,8 +120,11 @@ class WattBoxResetButton(WattBoxEntity, ButtonEntity):
         self._attr_unique_id = f"{self._wattbox.serial_number}-button-reset-{index}"
 
     async def async_update(self) -> None:
-        """Update the sensor."""
-        # Set/update attributes
+        """Update the sensor (legacy poll fallback)."""
+        self._update_attrs()
+
+    @callback
+    def _update_attrs(self) -> None:
         self._attr_extra_state_attributes["name"] = self._outlet.name
         self._attr_extra_state_attributes["method"] = self._outlet.method
         self._attr_extra_state_attributes["index"] = self._outlet.index
@@ -129,16 +134,5 @@ class WattBoxResetButton(WattBoxEntity, ButtonEntity):
         _LOGGER.debug("Resetting On: %s - %s", self._wattbox, self._outlet)
         # Trigger the action on the wattbox.
         await self._outlet.async_reset()
-
-    @property
-    def icon(self) -> str | None:
-        """Return the icon of this button."""
-        return RESTART_ICON
-
-    @property
-    def device_class(self) -> ButtonDeviceClass | None:
-        return ButtonDeviceClass.RESTART
-
-    @property
-    def entity_category(self) -> EntityCategory | None:
-        return EntityCategory.CONFIG
+        if self._coordinator is not None:
+            await self._coordinator.async_request_refresh()

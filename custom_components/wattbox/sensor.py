@@ -1,19 +1,28 @@
 """Sensor platform for wattbox."""
 
 import logging
-from datetime import timedelta
 
-from homeassistant.components.integration.sensor import IntegrationSensor
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import (
+    RestoreSensor,
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_NAME, CONF_RESOURCES, STATE_UNKNOWN, UnitOfTime
-from homeassistant.core import HomeAssistant
+from homeassistant.const import (
+    CONF_NAME,
+    CONF_RESOURCES,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+    UnitOfEnergy,
+)
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from homeassistant.util import slugify
+from homeassistant.util import dt as dt_util, slugify
 
-from .const import DOMAIN, DOMAIN_DATA, SENSOR_TYPES
+from .const import DOMAIN_DATA, SENSOR_TYPES
 from .entity import WattBoxEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,7 +37,7 @@ async def async_setup_entry(
     try:
         conf_name: str = entry.data[CONF_NAME]
         clean_name = slugify(conf_name)
-        entities: list[WattBoxSensor | WattBoxIntegrationSensor] = []
+        entities: list[WattBoxSensor | WattBoxEnergySensor] = []
 
         # Get available resources from entry data or use all sensor types
         resources = entry.data.get(CONF_RESOURCES, list(SENSOR_TYPES.keys()))
@@ -44,22 +53,8 @@ async def async_setup_entry(
                 _LOGGER.error("Failed to append WattBoxSensor: %s", err)
                 raise PlatformNotReady from err
 
-        # TODO: Add a setting for this, default to true?
-        # Add an IntegrationSensor, so end users don't have to manually configure it.
-        entities.append(
-            WattBoxIntegrationSensor(
-                hass=hass,
-                name=conf_name,
-                integration_method="trapezoidal",
-                sensor_name=f"{conf_name} Total Energy",
-                round_digits=2,
-                source_entity=f"sensor.{clean_name}_power",
-                unique_id=f"{clean_name}_total_energy",
-                unit_prefix="k",
-                unit_time=UnitOfTime.HOURS,
-                max_sub_interval=timedelta(minutes=5),
-            )
-        )
+        # Add a Total Energy sensor that integrates the power reading over time.
+        entities.append(WattBoxEnergySensor(hass, conf_name, clean_name))
 
         async_add_entities(entities)
     except Exception as err:
@@ -77,7 +72,7 @@ async def async_setup_platform(
     try:
         conf_name: str = discovery_info[CONF_NAME]
         clean_name = slugify(conf_name)
-        entities: list[WattBoxSensor | WattBoxIntegrationSensor] = []
+        entities: list[WattBoxSensor | WattBoxEnergySensor] = []
 
         resource: str
         for resource in discovery_info[CONF_RESOURCES]:
@@ -90,22 +85,8 @@ async def async_setup_platform(
                 _LOGGER.error("Failed to append WattBoxSensor: %s", err)
                 raise PlatformNotReady from err
 
-        # TODO: Add a setting for this, default to true?
-        # Add an IntegrationSensor, so end users don't have to manually configure it.
-        entities.append(
-            WattBoxIntegrationSensor(
-                hass=hass,
-                name=conf_name,
-                integration_method="trapezoidal",
-                sensor_name=f"{conf_name} Total Energy",
-                round_digits=2,
-                source_entity=f"sensor.{clean_name}_power",
-                unique_id=f"{clean_name}_total_energy",
-                unit_prefix="k",
-                unit_time=UnitOfTime.HOURS,
-                max_sub_interval=timedelta(minutes=5),
-            )
-        )
+        # Add a Total Energy sensor that integrates the power reading over time.
+        entities.append(WattBoxEnergySensor(hass, conf_name, clean_name))
 
         async_add_entities(entities)
     except Exception as err:
@@ -119,80 +100,92 @@ class WattBoxSensor(WattBoxEntity, SensorEntity):
     def __init__(self, hass: HomeAssistant, name: str, sensor_type: str) -> None:
         super().__init__(hass, name, sensor_type)
         self.sensor_type: str = sensor_type
-        self._attr_name = f"{name} {SENSOR_TYPES[self.sensor_type]['name']}"
-        self._attr_native_unit_of_measurement = SENSOR_TYPES[self.sensor_type]["unit"]
-        self._attr_icon = SENSOR_TYPES[self.sensor_type]["icon"]
+        sensor_def = SENSOR_TYPES[self.sensor_type]
+        self._attr_name = f"{name} {sensor_def['name']}"
+        self._attr_native_unit_of_measurement = sensor_def["unit"]
+        self._attr_icon = sensor_def["icon"]
+        self._attr_device_class = sensor_def["device_class"]
+        self._attr_state_class = sensor_def["state_class"]
         self._attr_unique_id = f"{self._wattbox.serial_number}-sensor-{sensor_type}"
 
     async def async_update(self) -> None:
-        """Update the sensor."""
-        # Check the data and update the value.
+        """Update the sensor (legacy poll fallback)."""
+        self._update_attrs()
+
+    @callback
+    def _update_attrs(self) -> None:
         self._attr_native_value = getattr(
             self._wattbox, self.sensor_type, STATE_UNKNOWN
         )
 
 
-class WattBoxIntegrationSensor(IntegrationSensor):
-    """WattBox Integration Sensor that includes device info."""
+class WattBoxEnergySensor(WattBoxEntity, RestoreSensor):
+    """Total Energy sensor derived by integrating the WattBox power reading.
 
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        name: str,
-        integration_method: str,
-        sensor_name: str,
-        source_entity: str,
-        unique_id: str,
-        unit_prefix: str,
-        unit_time: UnitOfTime,
-        round_digits: int = 2,
-        max_sub_interval: timedelta | None = None,
-    ) -> None:
-        # Use a default max_sub_interval if none provided
-        if max_sub_interval is None:
-            max_sub_interval = timedelta(minutes=5)
+    Uses the trapezoidal rule between successive coordinator updates and
+    persists its accumulated value across restarts via RestoreSensor.
+    """
 
-        # Initialize IntegrationSensor with all required parameters
-        super().__init__(
-            hass=hass,
-            integration_method=integration_method,
-            name=sensor_name,
-            round_digits=round_digits,
-            source_entity=source_entity,
-            unique_id=unique_id,
-            unit_prefix=unit_prefix,
-            unit_time=unit_time,
-            max_sub_interval=max_sub_interval,
-        )
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_icon = "mdi:lightning-bolt"
+    _attr_suggested_display_precision = 2
 
-        # Get the WattBox instance to create device info
-        self._wattbox = hass.data[DOMAIN_DATA][name]
+    def __init__(self, hass: HomeAssistant, name: str, clean_name: str) -> None:
+        super().__init__(hass, name)
+        self._attr_name = f"{name} Total Energy"
+        # Preserve the unique_id used by the previous IntegrationSensor-based
+        # implementation so existing installs keep their entity and history.
+        self._attr_unique_id = f"{clean_name}_total_energy"
+        self._attr_native_value: float = 0.0
+        self._last_power: float | None = None
+        self._last_update: float | None = None
 
-        # Set device info manually
-        from homeassistant.const import ATTR_CONNECTIONS
-        from homeassistant.helpers import device_registry as dr
-        from homeassistant.helpers.entity import DeviceInfo
+    async def async_added_to_hass(self) -> None:
+        """Restore previous accumulated value, then register update callbacks."""
+        last_sensor_data = await self.async_get_last_sensor_data()
+        if last_sensor_data is not None and isinstance(
+            last_sensor_data.native_value, (int, float)
+        ):
+            self._attr_native_value = float(last_sensor_data.native_value)
+        else:
+            # Fall back to the plain restored state in case the sensor data
+            # extra is not available (e.g. very old history).
+            last_state = await self.async_get_last_state()
+            if (
+                last_state is not None
+                and last_state.state not in (None, STATE_UNKNOWN, STATE_UNAVAILABLE)
+            ):
+                try:
+                    self._attr_native_value = float(last_state.state)
+                except (TypeError, ValueError):
+                    pass
 
-        device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._wattbox.serial_number)},
-            name=name,
-            manufacturer="WattBox",
-            model=getattr(self._wattbox, "hardware_version", None) or "WattBox",
-            sw_version=getattr(self._wattbox, "firmware_version", None),
-            serial_number=self._wattbox.serial_number,
-            configuration_url=(
-                f"http://{self._wattbox.host}:{self._wattbox.port}"
-                if hasattr(self._wattbox, "host") and hasattr(self._wattbox, "port")
-                else None
-            ),
-        )
+        # Subscribe to coordinator updates after restoring so the first tick
+        # integrates against the restored value, not the default 0.0.
+        await super().async_added_to_hass()
 
-        # Add MAC address as a device connection (looked up once during setup)
-        coordinator = hass.data.get(DOMAIN, {}).get(name)
-        mac_address = getattr(coordinator, "mac_address", None)
-        if mac_address:
-            device_info[ATTR_CONNECTIONS] = {
-                (dr.CONNECTION_NETWORK_MAC, mac_address)
-            }
+    @callback
+    def _update_attrs(self) -> None:
+        """Integrate the current power reading into the running total."""
+        power = getattr(self._wattbox, "power_value", None)
+        now = dt_util.utcnow().timestamp()
 
-        self._attr_device_info = device_info
+        if not isinstance(power, (int, float)):
+            # Treat non-numeric readings as a gap; reset the integration
+            # window so we don't extrapolate across unknown periods.
+            self._last_power = None
+            self._last_update = now
+            return
+
+        power = float(power)
+        if self._last_power is not None and self._last_update is not None:
+            elapsed_hours = (now - self._last_update) / 3600.0
+            if elapsed_hours > 0:
+                # Trapezoidal rule: average of endpoints * dt, watts -> kWh.
+                avg_watts = (self._last_power + power) / 2.0
+                self._attr_native_value += (avg_watts * elapsed_hours) / 1000.0
+
+        self._last_power = power
+        self._last_update = now

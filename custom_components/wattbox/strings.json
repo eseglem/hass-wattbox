@@ -11,6 +11,14 @@
           "password": "Password",
           "name": "Name"
         }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate WattBox",
+        "description": "The WattBox rejected the stored credentials. Enter the new username and password.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
       }
     },
     "error": {
@@ -19,7 +27,8 @@
       "unknown": "Unexpected error"
     },
     "abort": {
-      "already_configured": "Device is already configured"
+      "already_configured": "Device is already configured",
+      "reauth_successful": "Reauthentication was successful"
     }
   }
 }
