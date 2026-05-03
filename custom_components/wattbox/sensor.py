@@ -153,9 +153,10 @@ class WattBoxEnergySensor(WattBoxEntity, RestoreSensor):
             # Fall back to the plain restored state in case the sensor data
             # extra is not available (e.g. very old history).
             last_state = await self.async_get_last_state()
-            if (
-                last_state is not None
-                and last_state.state not in (None, STATE_UNKNOWN, STATE_UNAVAILABLE)
+            if last_state is not None and last_state.state not in (
+                None,
+                STATE_UNKNOWN,
+                STATE_UNAVAILABLE,
             ):
                 try:
                     self._attr_native_value = float(last_state.state)
