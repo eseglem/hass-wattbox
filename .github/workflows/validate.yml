@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Python
         uses: actions/setup-python@v6.2.0
         with:
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run hassfest validation
         uses: home-assistant/actions/hassfest@5f5b077d63a1e4c53019231409a0c4d791fb74e5 # master
@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Compare string file hashes
         id: strings-comparison
