@@ -3,18 +3,20 @@
     "step": {
       "user": {
         "title": "Set up WattBox",
-        "description": "Enter the connection details for your WattBox device.",
+        "description": "Enter the connection details for your WattBox device. The name is used for the device and its entities, and can be changed later by renaming the entry.",
         "data": {
           "host": "Host",
           "connection_type": "Connection type",
           "username": "Username",
           "password": "Password",
           "name": "Name",
-          "skip_regexp": "Skip outlets matching (optional)"
+          "skip_regexp": "Skip outlets matching (optional)",
+          "outlet_metering": "Per-outlet metering"
         },
         "data_description": {
           "connection_type": "800 series units use Telnet. The 150/250/650 series use HTTP. On the 800 series, SSH is reserved for OvrC remote management and normally rejects the device's own credentials.",
-          "skip_regexp": "Regular expression matched against outlet names. Matching outlets get no switch entity, applied from the moment the device is added. Use this for any outlet powering your network equipment, so it can never be switched off from Home Assistant. Can be changed later under Configure."
+          "skip_regexp": "Regular expression matched against outlet names. Matching outlets get no switch entity, applied from the moment the device is added. Use this for any outlet powering your network equipment, so it can never be switched off from Home Assistant. Can be changed later under Configure.",
+          "outlet_metering": "Poll power, current and voltage for each outlet. On by default. Each poll costs one extra request per outlet, so turning it off is worth considering on a large fleet. Can be changed later under Configure."
         }
       },
       "reauth_confirm": {
@@ -52,7 +54,7 @@
           "skip_regexp": "Regular expression matched against outlet names. Matching outlets get no switch entity. Use this for any outlet powering your network equipment, so it cannot be switched off from Home Assistant. Note that skipping any outlet also removes the master switch.",
           "name_regexp": "Regular expression used to shorten outlet names. If it contains a capture group, that group becomes the name.",
           "scan_interval": "Seconds between polls. Each poll is one request plus one per outlet when per-outlet metering is enabled.",
-          "outlet_metering": "Request power, current and voltage for each outlet. Off by default: it adds one request per outlet to every poll."
+          "outlet_metering": "Poll power, current and voltage for each outlet. On by default. Each poll costs one extra request per outlet."
         }
       }
     },

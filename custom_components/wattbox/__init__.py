@@ -215,6 +215,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if DOMAIN_DATA not in hass.data:
         hass.data[DOMAIN_DATA] = {}
 
+    # Adopt the entry title so renaming the entry in the UI actually renames
+    # the device and its entities. Without this the integration keeps using
+    # the name captured when the entry was created, and a rename silently does
+    # nothing -- the only way to change the name is to delete and re-add.
+    # Done before the update listener is registered, so it cannot loop: after
+    # the first pass title and name agree.
+    if entry.title and entry.title != entry.data.get(CONF_NAME):
+        hass.config_entries.async_update_entry(
+            entry, data={**entry.data, CONF_NAME: entry.title}
+        )
+
     # Extract configuration
     host = entry.data[CONF_HOST]
     port = entry.data[CONF_PORT]

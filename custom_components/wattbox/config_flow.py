@@ -141,7 +141,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # the site's own network equipment never gets a switch entity --
             # not even for the moment between adding the entry and opening
             # options for the first time.
-            options: dict[str, Any] = {}
+            options: dict[str, Any] = {
+                CONF_OUTLET_METERING: user_input.pop(
+                    CONF_OUTLET_METERING, DEFAULT_OUTLET_METERING
+                )
+            }
             if skip_regexp := (user_input.pop(CONF_SKIP_REGEXP, "") or "").strip():
                 try:
                     re.compile(skip_regexp)
@@ -187,6 +191,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Optional(CONF_PASSWORD, default=DEFAULT_PASSWORD): str,
                 vol.Required(CONF_NAME, default=DEFAULT_NAME): str,
                 vol.Optional(CONF_SKIP_REGEXP, default=""): str,
+                vol.Optional(
+                    CONF_OUTLET_METERING, default=DEFAULT_OUTLET_METERING
+                ): bool,
             }
         )
 

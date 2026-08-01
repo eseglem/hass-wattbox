@@ -48,10 +48,12 @@ TOPIC_UPDATE: Final[str] = "{}_data_update_{}"
 CONF_NAME_REGEXP: Final[str] = "name_regexp"
 CONF_SKIP_REGEXP: Final[str] = "skip_regexp"
 
-#: Per-outlet metering. Off by default: it costs one extra request per outlet
-#: on every poll and creates no entities unless explicitly enabled.
+#: Per-outlet metering. On by default, matching long-standing behaviour, and
+#: selectable both when adding a device and afterwards. Turning it off saves
+#: one request per outlet on every poll, which is worth having on a large
+#: fleet, but it is the installer's call rather than a silent default.
 CONF_OUTLET_METERING: Final[str] = "outlet_metering"
-DEFAULT_OUTLET_METERING: Final[bool] = False
+DEFAULT_OUTLET_METERING: Final[bool] = True
 
 # Connection type. Chosen explicitly rather than inferred from the port,
 # because guessing sends 800-series users to the HTTP driver, which answers
