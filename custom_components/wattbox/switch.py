@@ -2,6 +2,7 @@
 
 import logging
 import re
+from collections.abc import Mapping
 from typing import Any
 
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
@@ -19,7 +20,13 @@ from .entity import WattBoxEntity
 _LOGGER = logging.getLogger(__name__)
 
 
-def validate_regex(config: ConfigType, key: str) -> re.Pattern[str] | None:
+def validate_regex(config: Mapping[str, Any], key: str) -> re.Pattern[str] | None:
+    """Compile the pattern at *key*, or None if absent or invalid.
+
+    Takes a Mapping rather than a dict: the YAML path passes a ConfigType,
+    while the config-entry path passes `entry.options`, which is a
+    MappingProxyType.
+    """
     regexp_str: str = config.get(key, "")
     if regexp_str:
         try:
