@@ -48,6 +48,42 @@ TOPIC_UPDATE: Final[str] = "{}_data_update_{}"
 CONF_NAME_REGEXP: Final[str] = "name_regexp"
 CONF_SKIP_REGEXP: Final[str] = "skip_regexp"
 
+#: Per-outlet metering. Off by default: it costs one extra request per outlet
+#: on every poll and creates no entities unless explicitly enabled.
+CONF_OUTLET_METERING: Final[str] = "outlet_metering"
+DEFAULT_OUTLET_METERING: Final[bool] = False
+
+# Connection type. Chosen explicitly rather than inferred from the port,
+# because guessing sends 800-series users to the HTTP driver, which answers
+# with a 401 and no indication of why.
+CONF_CONNECTION_TYPE: Final[str] = "connection_type"
+CONNECTION_HTTP: Final[str] = "http"
+CONNECTION_TELNET: Final[str] = "telnet"
+CONNECTION_SSH: Final[str] = "ssh"
+CONNECTION_TYPES: Final[dict[str, int]] = {
+    CONNECTION_TELNET: 23,
+    CONNECTION_HTTP: 80,
+    CONNECTION_SSH: 22,
+}
+DEFAULT_CONNECTION_TYPE: Final[str] = CONNECTION_TELNET
+
+#: Entities that only carry meaning when a UPS is attached. On a WattBox with
+#: no UPS the device still answers `?UPSStatus`, but with a zeroed placeholder
+#: tuple, so these would sit at 0/off forever while still being polled and
+#: recorded. They are not created when `has_ups` is false, and appear on their
+#: own once a UPS is attached and the entry reloads.
+UPS_ONLY_SENSORS: Final[frozenset[str]] = frozenset(
+    {"battery_charge", "battery_load", "est_run_time"}
+)
+UPS_ONLY_BINARY_SENSORS: Final[frozenset[str]] = frozenset(
+    {"audible_alarm", "battery_health", "battery_test", "mute"}
+)
+
+#: Attributes the IP (telnet/SSH) driver never populates -- there is no
+#: equivalent in the Integration Protocol, so they are not created on those
+#: units rather than sitting at `unknown` indefinitely.
+HTTP_ONLY_BINARY_SENSORS: Final[frozenset[str]] = frozenset({"cloud_status"})
+
 
 class _BinarySensorDict(TypedDict):
     """TypedDict for use in BINARY_SENSOR_TYPES"""

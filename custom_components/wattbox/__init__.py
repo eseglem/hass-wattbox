@@ -6,7 +6,7 @@ https://github.com/eseglem/hass-wattbox/
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import partial
 from typing import Final
 
@@ -35,8 +35,10 @@ from pywattbox.base import BaseWattBox
 from .const import (
     BINARY_SENSOR_TYPES,
     CONF_NAME_REGEXP,
+    CONF_OUTLET_METERING,
     CONF_SKIP_REGEXP,
     DEFAULT_NAME,
+    DEFAULT_OUTLET_METERING,
     DEFAULT_PASSWORD,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
@@ -191,6 +193,23 @@ async def update_data(_dt: datetime, hass: HomeAssistant, name: str) -> None:
         )
 
 
+def _resolve_scan_interval(entry: ConfigEntry) -> timedelta:
+    """Poll interval, preferring the options flow value.
+
+    The options flow stores plain seconds. Entry data may hold either seconds
+    or a timedelta, depending on whether it came from YAML import.
+    """
+    if (seconds := entry.options.get(CONF_SCAN_INTERVAL)) is not None:
+        return timedelta(seconds=float(seconds))
+
+    configured = entry.data.get(CONF_SCAN_INTERVAL)
+    if isinstance(configured, timedelta):
+        return configured
+    if configured is not None:
+        return timedelta(seconds=float(configured))
+    return DEFAULT_SCAN_INTERVAL
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up WattBox from a config entry."""
     if DOMAIN_DATA not in hass.data:
@@ -202,7 +221,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     username = entry.data[CONF_USERNAME]
     password = entry.data[CONF_PASSWORD]
     name = entry.data[CONF_NAME]
-    scan_interval = entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+
+    # Options take precedence over the values captured at config time, so the
+    # options flow can retune a live entry without re-adding it.
+    options = entry.options
+    scan_interval = _resolve_scan_interval(entry)
 
     wattbox: BaseWattBox
     try:
@@ -211,7 +234,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error("Error creating WattBox instance: %s", error)
         raise ConfigEntryNotReady from error
 
+    # Per-outlet metering costs one extra round trip per outlet on every poll
+    # and produces no entities unless it is switched on, so it is opt-in.
+    if hasattr(wattbox, "outlet_power_status"):
+        wattbox.outlet_power_status = options.get(
+            CONF_OUTLET_METERING, DEFAULT_OUTLET_METERING
+        )
+
     hass.data[DOMAIN_DATA][name] = wattbox
+
+    entry.async_on_unload(entry.add_update_listener(_async_options_updated))
 
     # Look up MAC address once via executor (blocking ARP lookup)
     mac_address = await hass.async_add_executor_job(partial(get_mac_address, ip=host))
@@ -231,6 +263,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload the entry so new options take effect."""
+    await hass.config_entries.async_reload(entry.entry_id)
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     name = entry.data[CONF_NAME]
@@ -238,7 +275,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
-        hass.data.get(DOMAIN_DATA, {}).pop(name, None)
+        wattbox = hass.data.get(DOMAIN_DATA, {}).pop(name, None)
         hass.data.get(DOMAIN, {}).pop(name, None)
+
+        # Release the device-side session. The 800 series caps concurrent
+        # connections, so reloading without closing eventually locks us out.
+        if wattbox is not None and hasattr(wattbox, "async_close"):
+            try:
+                await wattbox.async_close()
+            except Exception:  # noqa: BLE001 - never block an unload
+                _LOGGER.debug("Error closing WattBox connection", exc_info=True)
 
     return unload_ok

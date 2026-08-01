@@ -29,10 +29,12 @@ async def async_setup_entry(
         entities: list[WattBoxEntity] = []
         wattbox: BaseWattBox = hass.data[DOMAIN_DATA][name]
 
-        # For config entries, we'll include all outlets by default
-        # TODO: Add options for name_regexp and skip_regexp in config flow
-        name_regexp = None
-        skip_regexp = None
+        # Sourced from the options, exactly as in switch.py. A reset button
+        # power-cycles its outlet, so a skipped outlet must not get one either
+        # -- otherwise suppressing the switch only removes the obvious way to
+        # cut power to protected equipment, not the one-click way.
+        name_regexp = validate_regex(entry.options, CONF_NAME_REGEXP)
+        skip_regexp = validate_regex(entry.options, CONF_SKIP_REGEXP)
 
         for i, outlet in wattbox.outlets.items():
             outlet_name = outlet.name or ""

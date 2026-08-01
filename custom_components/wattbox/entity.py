@@ -49,8 +49,10 @@ class WattBoxEntity(Entity):
             model=getattr(self._wattbox, "hardware_version", None) or "WattBox",
             sw_version=getattr(self._wattbox, "firmware_version", None),
             serial_number=self._wattbox.serial_number,
-            configuration_url=f"http://{self._wattbox.host}:{self._wattbox.port}"
-            if hasattr(self._wattbox, "host") and hasattr(self._wattbox, "port")
+            # Always the web UI. The entry's port may be 23 (telnet), which
+            # would produce an unusable http://host:23 link.
+            configuration_url=f"http://{self._wattbox.host}"
+            if hasattr(self._wattbox, "host")
             else None,
         )
 

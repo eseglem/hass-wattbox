@@ -22,10 +22,30 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.util import dt as dt_util, slugify
 
-from .const import SENSOR_TYPES
+from .const import DOMAIN_DATA, SENSOR_TYPES, UPS_ONLY_SENSORS
 from .entity import WattBoxEntity
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _is_supported(hass: HomeAssistant, name: str, sensor_type: str) -> bool:
+    """Whether this sensor can ever carry a real value on this device.
+
+    A WattBox with no UPS still answers `?UPSStatus`, but with a zeroed
+    placeholder tuple, so the battery sensors would sit at 0 forever while
+    still being polled and recorded.
+
+    Unsupported sensors are *not created*, rather than created disabled.
+    `entity_registry_enabled_default` is only consulted when an entity is
+    first registered, so it does nothing for anyone who already has these
+    entities -- which is everyone upgrading. Skipping creation takes effect on
+    every reload, and the entities come back by themselves if a UPS is later
+    attached.
+    """
+    if sensor_type not in UPS_ONLY_SENSORS:
+        return True
+    wattbox = hass.data.get(DOMAIN_DATA, {}).get(name)
+    return wattbox is None or bool(getattr(wattbox, "has_ups", False))
 
 
 async def async_setup_entry(
@@ -45,6 +65,12 @@ async def async_setup_entry(
         resource: str
         for resource in resources:
             if (sensor_type := resource.lower()) not in SENSOR_TYPES:
+                continue
+
+            if not _is_supported(hass, conf_name, sensor_type):
+                _LOGGER.debug(
+                    "Skipping unsupported sensor %s for %s", sensor_type, conf_name
+                )
                 continue
 
             try:

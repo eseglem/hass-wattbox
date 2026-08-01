@@ -41,10 +41,11 @@ async def async_setup_entry(
         entities: list[WattBoxEntity] = []
         wattbox: BaseWattBox = hass.data[DOMAIN_DATA][name]
 
-        # For config entries, we'll include all outlets by default
-        # TODO: Add options for name_regexp and skip_regexp in config flow
-        name_regexp = None
-        skip_regexp = None
+        # Sourced from the options flow. Without this, every outlet becomes a
+        # switch with no way to exclude any -- including outlets powering the
+        # network equipment this integration depends on.
+        name_regexp = validate_regex(entry.options, CONF_NAME_REGEXP)
+        skip_regexp = validate_regex(entry.options, CONF_SKIP_REGEXP)
 
         skipped_an_outlet = False
         for i, outlet in wattbox.outlets.items():
@@ -67,13 +68,18 @@ async def async_setup_entry(
                 _LOGGER.error("Failed to append WattBoxBinarySwitch: %s", err)
                 raise PlatformNotReady from err
 
-        # Add the master switch if no outlets were skipped
-        if not skipped_an_outlet:
-            entities.append(WattBoxMasterSwitch(hass, name))
-        else:
+        # Add the master switch if no outlets were skipped and the device
+        # actually exposes one. The IP (telnet/SSH) driver never populates
+        # `master_outlet`, so on those units the entity would sit at `unknown`
+        # and silently do nothing when pressed.
+        if skipped_an_outlet:
             _LOGGER.debug(
                 "Skipping master switch because an outlet was skipped for %s", name
             )
+        elif wattbox.master_outlet is None:
+            _LOGGER.debug("Skipping master switch: %s exposes no master outlet", name)
+        else:
+            entities.append(WattBoxMasterSwitch(hass, name))
 
         if skipped_an_outlet:
             _LOGGER.warning(
