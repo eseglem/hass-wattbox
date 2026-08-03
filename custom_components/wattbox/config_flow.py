@@ -36,6 +36,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_USER,
     DOMAIN,
+    DOMAIN_DATA,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -98,6 +99,12 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict:
             "password": password,
             "name": name,
             "serial_number": wattbox.serial_number,
+            # Whether this device reports power per outlet, known only now that
+            # it has answered. `outlet_power_status` exists on the IP driver
+            # alone, and pywattbox clears it for models that cannot report it.
+            "outlet_metering_supported": bool(
+                getattr(wattbox, "outlet_power_status", False)
+            ),
         }
     except Exception as exc:
         _LOGGER.error("Error connecting to WattBox %s: %s", host, exc)
@@ -163,6 +170,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     )
                     await self.async_set_unique_id(unique_id)
                     self._abort_if_unique_id_configured()
+
+                    # The form has to offer metering before the model is known,
+                    # so reconcile it against what the device actually reports.
+                    # Storing a preference the hardware cannot honour leaves a
+                    # ticked box that does nothing.
+                    if not info["outlet_metering_supported"]:
+                        options[CONF_OUTLET_METERING] = False
 
                     return self.async_create_entry(
                         title=info["title"], data=user_input, options=options
@@ -267,6 +281,23 @@ class WattBoxOptionsFlow(OptionsFlow):
     puts a one-click way to cut your own remote access on the dashboard.
     """
 
+    def _supports_outlet_metering(self) -> bool:
+        """Whether the connected device reports power per outlet.
+
+        Only the IP (telnet/SSH) driver defines `outlet_power_status`, and
+        pywattbox clears it for models that cannot report it, so its presence
+        is the device's own answer rather than a guess from the port number.
+
+        Defaults to True when the entry is not loaded — a device that cannot
+        be reached should not have the option silently dropped from the form,
+        which would discard the stored value on save.
+        """
+        name = self.config_entry.data.get(CONF_NAME)
+        wattbox = self.hass.data.get(DOMAIN_DATA, {}).get(name)
+        if wattbox is None:
+            return True
+        return hasattr(wattbox, "outlet_power_status")
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -281,7 +312,12 @@ class WattBoxOptionsFlow(OptionsFlow):
                     except re.error:
                         errors[key] = "invalid_regex"
             if not errors:
-                return self.async_create_entry(data=user_input)
+                # Merged, not replaced: the metering field is absent from the
+                # form on devices that do not support it, and a bare
+                # `data=user_input` would drop every option not on screen.
+                return self.async_create_entry(
+                    data={**self.config_entry.options, **user_input}
+                )
 
         options = self.config_entry.options
         data_schema = vol.Schema(
@@ -305,12 +341,23 @@ class WattBoxOptionsFlow(OptionsFlow):
                         min=5, max=3600, step=1, unit_of_measurement="s"
                     )
                 ),
-                vol.Optional(
-                    CONF_OUTLET_METERING,
-                    default=options.get(CONF_OUTLET_METERING, DEFAULT_OUTLET_METERING),
-                ): bool,
             }
         )
+
+        # Offered only where it can do something. On an HTTP device the XML API
+        # reports power for the unit as a whole and never per outlet, so the
+        # checkbox would be a control with no effect.
+        if self._supports_outlet_metering():
+            data_schema = data_schema.extend(
+                {
+                    vol.Optional(
+                        CONF_OUTLET_METERING,
+                        default=options.get(
+                            CONF_OUTLET_METERING, DEFAULT_OUTLET_METERING
+                        ),
+                    ): bool,
+                }
+            )
 
         return self.async_show_form(
             step_id="init", data_schema=data_schema, errors=errors

@@ -245,12 +245,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error("Error creating WattBox instance: %s", error)
         raise ConfigEntryNotReady from error
 
-    # Per-outlet metering costs one extra round trip per outlet on every poll
-    # and produces no entities unless it is switched on, so it is opt-in.
-    if hasattr(wattbox, "outlet_power_status"):
-        wattbox.outlet_power_status = options.get(
-            CONF_OUTLET_METERING, DEFAULT_OUTLET_METERING
-        )
+    # Per-outlet metering costs one extra round trip per outlet on every poll,
+    # so it can be switched off. The option can only *disable* it: pywattbox
+    # already decides whether the model reports per-outlet power at all
+    # (`parse_initial` leaves it false on the 150 and 250), and forcing it on
+    # for a device that cannot answer would send `?OutletPowerStatus=N` and
+    # fail the whole poll on an error reply.
+    if hasattr(wattbox, "outlet_power_status") and not options.get(
+        CONF_OUTLET_METERING, DEFAULT_OUTLET_METERING
+    ):
+        wattbox.outlet_power_status = False
 
     hass.data[DOMAIN_DATA][name] = wattbox
 

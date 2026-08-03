@@ -16,7 +16,7 @@
         "data_description": {
           "connection_type": "800 series units use Telnet. The 150/250/650 series use HTTP. On the 800 series, SSH is reserved for OvrC remote management and normally rejects the device's own credentials.",
           "skip_regexp": "Regular expression matched against outlet names. Matching outlets get no switch entity, applied from the moment the device is added. Use this for any outlet powering your network equipment, so it can never be switched off from Home Assistant. Can be changed later under Configure.",
-          "outlet_metering": "Poll power, current and voltage for each outlet. On by default. Each poll costs one extra request per outlet, so turning it off is worth considering on a large fleet. Can be changed later under Configure."
+          "outlet_metering": "Create power, current and voltage sensors for each outlet. Telnet and SSH only — the HTTP API reports power for the unit as a whole and never per outlet, so this is switched back off automatically if the device turns out not to support it. Costs one extra request per outlet on every poll. Outlets excluded by the skip pattern get no sensors either."
         }
       },
       "reauth_confirm": {
@@ -54,7 +54,7 @@
           "skip_regexp": "Regular expression matched against outlet names. Matching outlets get no switch entity. Use this for any outlet powering your network equipment, so it cannot be switched off from Home Assistant. Note that skipping any outlet also removes the master switch.",
           "name_regexp": "Regular expression used to shorten outlet names. If it contains a capture group, that group becomes the name.",
           "scan_interval": "Seconds between polls. Each poll is one request plus one per outlet when per-outlet metering is enabled.",
-          "outlet_metering": "Poll power, current and voltage for each outlet. On by default. Each poll costs one extra request per outlet."
+          "outlet_metering": "Create power, current and voltage sensors for each outlet. Costs one extra request per outlet on every poll. Outlets excluded by the skip pattern get no sensors either. Turning this off removes the sensors."
         }
       }
     },
