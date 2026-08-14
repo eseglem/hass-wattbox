@@ -10,10 +10,42 @@ from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-from .const import BINARY_SENSOR_TYPES
+from .const import (
+    BINARY_SENSOR_TYPES,
+    DOMAIN_DATA,
+    HTTP_ONLY_BINARY_SENSORS,
+    UPS_ONLY_BINARY_SENSORS,
+)
 from .entity import WattBoxEntity
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _is_supported(hass: HomeAssistant, name: str, sensor_type: str) -> bool:
+    """Whether this sensor can ever carry a real value on this device.
+
+    A WattBox with no UPS reports a zeroed placeholder UPS tuple, and the IP
+    driver has no source at all for `cloud_status`, so those entities sit
+    pinned at off/unknown while still being polled and recorded.
+
+    Unsupported sensors are *not created*, rather than created disabled.
+    `entity_registry_enabled_default` is only consulted when an entity is
+    first registered, so it does nothing for anyone who already has these
+    entities. Skipping creation takes effect on every reload.
+    """
+    wattbox = hass.data.get(DOMAIN_DATA, {}).get(name)
+    if wattbox is None:
+        return True
+    if sensor_type in UPS_ONLY_BINARY_SENSORS and not getattr(
+        wattbox, "has_ups", False
+    ):
+        return False
+    if (
+        sensor_type in HTTP_ONLY_BINARY_SENSORS
+        and getattr(wattbox, sensor_type, None) is None
+    ):
+        return False
+    return True
 
 
 async def async_setup_entry(
@@ -33,6 +65,12 @@ async def async_setup_entry(
             sensor_type = resource.lower()
 
             if sensor_type not in BINARY_SENSOR_TYPES:
+                continue
+
+            if not _is_supported(hass, name, sensor_type):
+                _LOGGER.debug(
+                    "Skipping unsupported binary sensor %s for %s", sensor_type, name
+                )
                 continue
 
             try:
