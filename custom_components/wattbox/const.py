@@ -48,12 +48,11 @@ TOPIC_UPDATE: Final[str] = "{}_data_update_{}"
 CONF_NAME_REGEXP: Final[str] = "name_regexp"
 CONF_SKIP_REGEXP: Final[str] = "skip_regexp"
 
-#: Per-outlet metering. On by default, matching long-standing behaviour, and
-#: selectable both when adding a device and afterwards. Turning it off saves
-#: one request per outlet on every poll, which is worth having on a large
-#: fleet, but it is the installer's call rather than a silent default.
+#: Per-outlet metering. Off by default to avoid extra per-outlet requests
+#: unless explicitly enabled by the user.
 CONF_OUTLET_METERING: Final[str] = "outlet_metering"
-DEFAULT_OUTLET_METERING: Final[bool] = True
+DEFAULT_OUTLET_METERING: Final[bool] = False
+CONF_OUTLET_METERING_SUPPORTED: Final[str] = "outlet_metering_supported"
 
 #: The sensors created per outlet when metering is on, in display order.
 #: Keys into `SENSOR_TYPES`, so the units, icons and device classes match the

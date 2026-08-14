@@ -27,6 +27,7 @@ from .const import (
     CONF_CONNECTION_TYPE,
     CONF_NAME_REGEXP,
     CONF_OUTLET_METERING,
+    CONF_OUTLET_METERING_SUPPORTED,
     CONF_SKIP_REGEXP,
     CONNECTION_TYPES,
     DEFAULT_CONNECTION_TYPE,
@@ -179,7 +180,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         options[CONF_OUTLET_METERING] = False
 
                     return self.async_create_entry(
-                        title=info["title"], data=user_input, options=options
+                        title=info["title"],
+                        data={
+                            **user_input,
+                            CONF_OUTLET_METERING_SUPPORTED: info[
+                                "outlet_metering_supported"
+                            ],
+                        },
+                        options=options,
                     )
                 except CannotConnect:
                     errors["base"] = "cannot_connect"
@@ -292,6 +300,10 @@ class WattBoxOptionsFlow(OptionsFlow):
         be reached should not have the option silently dropped from the form,
         which would discard the stored value on save.
         """
+        supported = self.config_entry.data.get(CONF_OUTLET_METERING_SUPPORTED)
+        if isinstance(supported, bool):
+            return supported
+
         name = self.config_entry.data.get(CONF_NAME)
         wattbox = self.hass.data.get(DOMAIN_DATA, {}).get(name)
         if wattbox is None:

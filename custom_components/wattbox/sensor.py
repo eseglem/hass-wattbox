@@ -186,10 +186,12 @@ def _prune_outlet_sensors(
     registry = er.async_get(hass)
     prefix = _outlet_unique_id_prefix(serial_number)
     for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        unique_id = entity.unique_id
         if (
             entity.domain == "sensor"
-            and entity.unique_id.startswith(prefix)
-            and entity.unique_id not in keep
+            and unique_id is not None
+            and unique_id.startswith(prefix)
+            and unique_id not in keep
         ):
             _LOGGER.debug("Removing outlet sensor %s", entity.entity_id)
             registry.async_remove(entity.entity_id)
