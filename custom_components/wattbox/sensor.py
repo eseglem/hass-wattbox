@@ -67,7 +67,7 @@ async def async_setup_entry(
     try:
         conf_name: str = entry.data[CONF_NAME]
         clean_name = slugify(conf_name)
-        entities: list[WattBoxSensor | WattBoxEnergySensor | WattBoxOutletSensor] = []
+        entities: list[WattBoxEntity] = []
 
         # Get available resources from entry data or use all sensor types
         resources = entry.data.get(CONF_RESOURCES, list(SENSOR_TYPES.keys()))
