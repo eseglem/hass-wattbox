@@ -210,6 +210,19 @@ def _resolve_scan_interval(entry: ConfigEntry) -> timedelta:
     return DEFAULT_SCAN_INTERVAL
 
 
+async def _async_close_wattbox(wattbox: BaseWattBox | None) -> None:
+    """Release the device-side session, if the driver has one to release.
+
+    The 800 series caps concurrent connections, so a session that is dropped
+    without being closed eventually locks us out of the device entirely.
+    """
+    if wattbox is not None and hasattr(wattbox, "async_close"):
+        try:
+            await wattbox.async_close()
+        except Exception:  # noqa: BLE001 - closing must never raise
+            _LOGGER.debug("Error closing WattBox connection", exc_info=True)
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up WattBox from a config entry."""
     if DOMAIN_DATA not in hass.data:
@@ -260,20 +273,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
 
-    # Look up MAC address once via executor (blocking ARP lookup)
-    mac_address = await hass.async_add_executor_job(partial(get_mac_address, ip=host))
+    # Everything past the point the session exists has to hand it back if it
+    # fails. Home Assistant does not call `async_unload_entry` for a setup that
+    # raised, so nothing else would close it, and it retries on a backoff --
+    # leaking one session per attempt until the device refuses new connections.
+    try:
+        # Look up MAC address once via executor (blocking ARP lookup)
+        mac_address = await hass.async_add_executor_job(
+            partial(get_mac_address, ip=host)
+        )
 
-    # Create coordinator for polling and availability tracking
-    coordinator = WattBoxCoordinator(
-        hass, wattbox, name, scan_interval, mac_address=mac_address
-    )
-    await coordinator.async_config_entry_first_refresh()
+        # Create coordinator for polling and availability tracking
+        coordinator = WattBoxCoordinator(
+            hass, wattbox, name, scan_interval, mac_address=mac_address
+        )
+        await coordinator.async_config_entry_first_refresh()
 
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][name] = coordinator
+        hass.data.setdefault(DOMAIN, {})
+        hass.data[DOMAIN][name] = coordinator
 
-    # Forward entry setup to platforms
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        # Forward entry setup to platforms
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    except Exception:
+        hass.data.get(DOMAIN_DATA, {}).pop(name, None)
+        hass.data.get(DOMAIN, {}).pop(name, None)
+        await _async_close_wattbox(wattbox)
+        raise
 
     return True
 
@@ -292,13 +317,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         wattbox = hass.data.get(DOMAIN_DATA, {}).pop(name, None)
         hass.data.get(DOMAIN, {}).pop(name, None)
-
-        # Release the device-side session. The 800 series caps concurrent
-        # connections, so reloading without closing eventually locks us out.
-        if wattbox is not None and hasattr(wattbox, "async_close"):
-            try:
-                await wattbox.async_close()
-            except Exception:  # noqa: BLE001 - never block an unload
-                _LOGGER.debug("Error closing WattBox connection", exc_info=True)
+        await _async_close_wattbox(wattbox)
 
     return unload_ok

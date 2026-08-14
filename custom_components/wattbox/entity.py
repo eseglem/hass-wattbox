@@ -1,11 +1,12 @@
 """Base Entity component for wattbox."""
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from typing import Any, Literal
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -14,6 +15,33 @@ from pywattbox.base import BaseWattBox
 from .const import DOMAIN, DOMAIN_DATA, TOPIC_UPDATE
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@callback
+def async_prune_unsupported(
+    hass: HomeAssistant, entry: ConfigEntry, unique_ids: Iterable[str]
+) -> None:
+    """Delete registry entries for entities this device cannot populate.
+
+    Declining to create an entity does not remove it. Home Assistant restores
+    the registry entry for the config entry, finds nothing providing it, and
+    shows it as `unavailable` indefinitely. Without this, everyone upgrading
+    from a release that created these unconditionally keeps a wall of dead
+    battery, UPS and cloud-status entities that they cannot clear except by
+    deleting each one by hand.
+
+    Matched on exact unique IDs -- the ones the platform just decided to skip
+    -- so it cannot reach an entity that is still being created.
+    """
+    stale = set(unique_ids)
+    if not stale:
+        return
+
+    registry = er.async_get(hass)
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if entity.unique_id in stale:
+            _LOGGER.debug("Removing unsupported entity %s", entity.entity_id)
+            registry.async_remove(entity.entity_id)
 
 
 class WattBoxEntity(Entity):
