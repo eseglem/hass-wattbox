@@ -16,7 +16,7 @@ from .const import (
     HTTP_ONLY_BINARY_SENSORS,
     UPS_ONLY_BINARY_SENSORS,
 )
-from .entity import WattBoxEntity
+from .entity import WattBoxEntity, async_prune_unsupported
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -61,6 +61,9 @@ async def async_setup_entry(
         # Get available resources from entry data or use all binary sensor types
         resources = entry.data.get(CONF_RESOURCES, list(BINARY_SENSOR_TYPES.keys()))
 
+        wattbox = hass.data[DOMAIN_DATA][name]
+        unsupported: set[str] = set()
+
         for resource in resources:
             sensor_type = resource.lower()
 
@@ -71,6 +74,7 @@ async def async_setup_entry(
                 _LOGGER.debug(
                     "Skipping unsupported binary sensor %s for %s", sensor_type, name
                 )
+                unsupported.add(f"{wattbox.serial_number}-bsensor-{sensor_type}")
                 continue
 
             try:
@@ -78,6 +82,11 @@ async def async_setup_entry(
             except Exception as err:
                 _LOGGER.error("Failed to append WattBoxBinarySensor: %s", err)
                 raise PlatformNotReady from err
+
+        # Clear entities left behind by an earlier version that created these
+        # unconditionally -- the UPS ones on a unit with no UPS, and
+        # `cloud_status` on telnet/SSH, where nothing can ever populate it.
+        async_prune_unsupported(hass, entry, unsupported)
 
         async_add_entities(entities)
     except Exception as err:

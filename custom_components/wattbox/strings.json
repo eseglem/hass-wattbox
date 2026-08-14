@@ -52,7 +52,7 @@
         },
         "data_description": {
           "skip_regexp": "Regular expression matched against outlet names. Matching outlets get no switch entity. Use this for any outlet powering your network equipment, so it cannot be switched off from Home Assistant. Note that skipping any outlet also removes the master switch.",
-          "name_regexp": "Regular expression used to shorten outlet names. If it contains a capture group, that group becomes the name.",
+          "name_regexp": "Regular expression used to shorten outlet names. If it contains a capture group, that group becomes the name, otherwise the whole match is used. Outlets whose names do not match keep their full name. This only changes names — it never removes outlets, which is what the skip pattern is for.",
           "scan_interval": "Seconds between polls. Each poll is one request plus one per outlet when per-outlet metering is enabled.",
           "outlet_metering": "Create power, current and voltage sensors for each outlet. Costs one extra request per outlet on every poll. Outlets excluded by the skip pattern get no sensors either. Turning this off removes the sensors."
         }

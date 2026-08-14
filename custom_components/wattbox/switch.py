@@ -36,6 +36,33 @@ def validate_regex(config: Mapping[str, Any], key: str) -> re.Pattern[str] | Non
     return None
 
 
+def resolve_outlet_name(name_regexp: re.Pattern[str] | None, outlet_name: str) -> str:
+    """Shorten *outlet_name* with *name_regexp*, as the docs describe it.
+
+    The first capture group wins when the pattern has one that participated in
+    the match, otherwise the whole match is used. Patterns without a capture
+    group are explicitly supported, so asking for group 1 has to tolerate its
+    absence: `Match.group(1)` raises `IndexError`, not `re.error`, and the
+    previous `except re.error` let it escape and take the platform down.
+
+    A pattern that does not match leaves the name untouched. It selects which
+    part of a name to keep, never which outlets exist -- that is `skip_regexp`.
+    """
+    if name_regexp is None:
+        return outlet_name
+
+    matched = name_regexp.search(outlet_name)
+    if matched is None:
+        return outlet_name
+
+    # `re.groups` counts the groups in the pattern; `group(1)` still returns
+    # None when the group is optional and did not participate.
+    if matched.re.groups and (group := matched.group(1)) is not None:
+        return group
+
+    return matched.group()
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -64,10 +91,12 @@ async def async_setup_entry(
                 skipped_an_outlet = True
                 continue
 
-            # Check outlet name pattern
-            if name_regexp and not name_regexp.search(outlet_name):
-                _LOGGER.debug("Not including Outlet: %s - %s", i, outlet_name)
-                continue
+            # Shortens the name, and never decides whether the outlet exists.
+            # This path used to drop every outlet the pattern did not match,
+            # which contradicted both the option's description and the YAML
+            # behaviour, and silently removed switches for outlets the user
+            # only meant to rename.
+            outlet_name = resolve_outlet_name(name_regexp, outlet_name)
 
             try:
                 entities.append(WattBoxBinarySwitch(hass, name, i, outlet_name))
@@ -127,13 +156,7 @@ async def async_setup_platform(
                 skipped_an_outlet = True
                 continue
 
-            if name_regexp:
-                if matched := name_regexp.search(outlet_name):
-                    outlet_name = matched.group()
-                    try:
-                        outlet_name = matched.group(1)
-                    except re.error:
-                        pass
+            outlet_name = resolve_outlet_name(name_regexp, outlet_name)
 
             _LOGGER.debug("Adding switch #%s - %s", i, outlet_name)
             try:

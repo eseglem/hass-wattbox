@@ -32,7 +32,7 @@ from .const import (
     SENSOR_TYPES,
     UPS_ONLY_SENSORS,
 )
-from .entity import WattBoxEntity
+from .entity import WattBoxEntity, async_prune_unsupported
 from .switch import validate_regex
 
 _LOGGER = logging.getLogger(__name__)
@@ -72,6 +72,9 @@ async def async_setup_entry(
         # Get available resources from entry data or use all sensor types
         resources = entry.data.get(CONF_RESOURCES, list(SENSOR_TYPES.keys()))
 
+        wattbox = hass.data[DOMAIN_DATA][conf_name]
+        unsupported: set[str] = set()
+
         resource: str
         for resource in resources:
             if (sensor_type := resource.lower()) not in SENSOR_TYPES:
@@ -81,6 +84,7 @@ async def async_setup_entry(
                 _LOGGER.debug(
                     "Skipping unsupported sensor %s for %s", sensor_type, conf_name
                 )
+                unsupported.add(f"{wattbox.serial_number}-sensor-{sensor_type}")
                 continue
 
             try:
@@ -88,6 +92,11 @@ async def async_setup_entry(
             except Exception as err:
                 _LOGGER.error("Failed to append WattBoxSensor: %s", err)
                 raise PlatformNotReady from err
+
+        # Clear entities left behind by an earlier version that created these
+        # unconditionally, so a WattBox with no UPS does not keep a set of
+        # battery sensors stuck at `unavailable` forever.
+        async_prune_unsupported(hass, entry, unsupported)
 
         # Add a Total Energy sensor that integrates the power reading over time.
         entities.append(WattBoxEnergySensor(hass, conf_name, clean_name))
@@ -336,6 +345,17 @@ class WattBoxEnergySensor(WattBoxEntity, RestoreSensor):
         """Integrate the current power reading into the running total."""
         power = getattr(self._wattbox, "power_value", None)
         now = dt_util.utcnow().timestamp()
+
+        # A failed poll leaves `power_value` at its last known reading. The
+        # coordinator notifies listeners when it starts failing and again when
+        # it recovers, so integrating on those ticks would bridge the entire
+        # outage with the trapezoidal rule and add the whole gap to a
+        # TOTAL_INCREASING total in one jump -- which is exactly wrong when the
+        # outage was itself a power cut. Treat unavailability as a gap.
+        if self._coordinator is not None and not self._coordinator.last_update_success:
+            self._last_power = None
+            self._last_update = now
+            return
 
         if not isinstance(power, (int, float)):
             # Treat non-numeric readings as a gap; reset the integration

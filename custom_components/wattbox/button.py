@@ -1,7 +1,6 @@
 """Button platform for wattbox."""
 
 import logging
-import re
 
 from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
 from homeassistant.config_entries import ConfigEntry
@@ -14,7 +13,7 @@ from pywattbox.base import BaseWattBox, Outlet
 
 from .const import CONF_NAME_REGEXP, CONF_SKIP_REGEXP, DOMAIN_DATA, RESTART_ICON
 from .entity import WattBoxEntity
-from .switch import validate_regex
+from .switch import resolve_outlet_name, validate_regex
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,13 +43,7 @@ async def async_setup_entry(
                 _LOGGER.debug("Skipping outlet #%s - %s", i, outlet_name)
                 continue
 
-            if name_regexp:
-                if matched := name_regexp.search(outlet_name):
-                    outlet_name = matched.group()
-                    try:
-                        outlet_name = matched.group(1)
-                    except re.error:
-                        pass
+            outlet_name = resolve_outlet_name(name_regexp, outlet_name)
 
             _LOGGER.debug("Adding outlet reset #%s - %s", i, outlet_name)
             entities.append(WattBoxResetButton(hass, name, i, outlet_name))
@@ -84,13 +77,7 @@ async def async_setup_platform(
             _LOGGER.debug("Skipping outlet #%s - %s", i, outlet_name)
             continue
 
-        if name_regexp:
-            if matched := name_regexp.search(outlet_name):
-                outlet_name = matched.group()
-                try:
-                    outlet_name = matched.group(1)
-                except re.error:
-                    pass
+        outlet_name = resolve_outlet_name(name_regexp, outlet_name)
 
         _LOGGER.debug("Adding outlet reset #%s - %s", i, outlet_name)
         entities.append(WattBoxResetButton(hass, name, i, outlet_name))
