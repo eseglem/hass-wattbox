@@ -51,6 +51,7 @@ from .const import (
     TOPIC_UPDATE,
 )
 from .coordinator import WattBoxCoordinator
+from .session import async_close_wattbox, async_create_http_wattbox
 
 REQUIREMENTS: Final[list[str]] = ["pywattbox>=0.7.2"]
 
@@ -102,12 +103,12 @@ async def _async_create_wattbox(
         )
     else:
         _LOGGER.debug("Importing HTTP Wattbox")
-        from pywattbox.http_wattbox import async_create_http_wattbox
-
         # Pre-import the encoding to avoid blocking call issues
         await async_import_module(hass, "encodings.ascii")
 
         _LOGGER.debug("Creating HTTP WattBox")
+        # Ours rather than pywattbox's: the driver's own client keeps a cookie
+        # jar and a keep-alive pool it never lets go of. See `session.py`.
         wattbox = await async_create_http_wattbox(
             host=host, user=username, password=password, port=port
         )
@@ -210,19 +211,6 @@ def _resolve_scan_interval(entry: ConfigEntry) -> timedelta:
     return DEFAULT_SCAN_INTERVAL
 
 
-async def _async_close_wattbox(wattbox: BaseWattBox | None) -> None:
-    """Release the device-side session, if the driver has one to release.
-
-    The 800 series caps concurrent connections, so a session that is dropped
-    without being closed eventually locks us out of the device entirely.
-    """
-    if wattbox is not None and hasattr(wattbox, "async_close"):
-        try:
-            await wattbox.async_close()
-        except Exception:  # noqa: BLE001 - closing must never raise
-            _LOGGER.debug("Error closing WattBox connection", exc_info=True)
-
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up WattBox from a config entry."""
     if DOMAIN_DATA not in hass.data:
@@ -297,7 +285,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception:
         hass.data.get(DOMAIN_DATA, {}).pop(name, None)
         hass.data.get(DOMAIN, {}).pop(name, None)
-        await _async_close_wattbox(wattbox)
+        await async_close_wattbox(wattbox)
         raise
 
     return True
@@ -317,6 +305,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         wattbox = hass.data.get(DOMAIN_DATA, {}).pop(name, None)
         hass.data.get(DOMAIN, {}).pop(name, None)
-        await _async_close_wattbox(wattbox)
+        await async_close_wattbox(wattbox)
 
     return unload_ok
