@@ -13,6 +13,7 @@ from pywattbox.base import BaseWattBox, Outlet
 
 from .const import CONF_NAME_REGEXP, CONF_SKIP_REGEXP, DOMAIN_DATA, RESTART_ICON
 from .entity import WattBoxEntity
+from .session import async_run_command
 from .switch import resolve_outlet_name, validate_regex
 
 _LOGGER = logging.getLogger(__name__)
@@ -122,6 +123,6 @@ class WattBoxResetButton(WattBoxEntity, ButtonEntity):
         """Issue a reset to the outlet."""
         _LOGGER.debug("Resetting On: %s - %s", self._wattbox, self._outlet)
         # Trigger the action on the wattbox.
-        await self._outlet.async_reset()
+        await async_run_command(self._wattbox, self._outlet.async_reset)
         if self._coordinator is not None:
             await self._coordinator.async_request_refresh()

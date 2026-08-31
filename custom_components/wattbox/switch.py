@@ -16,6 +16,7 @@ from pywattbox.base import BaseWattBox, Outlet
 
 from .const import CONF_NAME_REGEXP, CONF_SKIP_REGEXP, DOMAIN_DATA, PLUG_ICON
 from .entity import WattBoxEntity
+from .session import async_run_command
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -221,7 +222,7 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         self._attr_is_on = True
         self.async_write_ha_state()
         # Trigger the action on the wattbox.
-        await self._outlet.async_turn_on()
+        await async_run_command(self._wattbox, self._outlet.async_turn_on)
         if self._coordinator is not None:
             await self._coordinator.async_request_refresh()
 
@@ -235,7 +236,7 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         self._attr_is_on = False
         self.async_write_ha_state()
         # Trigger the action on the wattbox.
-        await self._outlet.async_turn_off()
+        await async_run_command(self._wattbox, self._outlet.async_turn_off)
         if self._coordinator is not None:
             await self._coordinator.async_request_refresh()
 

@@ -39,22 +39,14 @@ from .const import (
     DOMAIN,
     DOMAIN_DATA,
 )
+from .session import (
+    WattBoxLoggedOut,
+    async_close_wattbox,
+    async_create_http_wattbox,
+    is_auth_error,
+)
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _is_auth_error(err: BaseException) -> bool:
-    """Best-effort detection of auth failures across pywattbox transports."""
-    try:
-        from httpx import HTTPStatusError
-
-        if isinstance(err, HTTPStatusError):
-            status = getattr(err.response, "status_code", None)
-            if status in (401, 403):
-                return True
-    except ImportError:  # pragma: no cover
-        pass
-    return "auth" in type(err).__name__.lower()
 
 
 async def validate_input(hass: HomeAssistant, data: dict) -> dict:
@@ -82,8 +74,6 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict:
                 host=host, user=username, password=password, port=port
             )
         else:
-            from pywattbox.http_wattbox import async_create_http_wattbox
-
             await async_import_module(hass, "encodings.ascii")
 
             wattbox = await async_create_http_wattbox(
@@ -109,18 +99,17 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict:
         }
     except Exception as exc:
         _LOGGER.error("Error connecting to WattBox %s: %s", host, exc)
-        if _is_auth_error(exc):
+        # A probe starts from a session of its own, so a device that answers it
+        # with the login page is rejecting these credentials, not replaying a
+        # stale login the way a long-running entry can.
+        if isinstance(exc, WattBoxLoggedOut) or is_auth_error(exc):
             raise InvalidAuth from exc
         raise CannotConnect from exc
     finally:
         # Probing opens a session on a device that caps concurrent
         # connections. Release it whether or not validation succeeded,
         # otherwise a few failed attempts lock the user out.
-        if wattbox is not None and hasattr(wattbox, "async_close"):
-            try:
-                await wattbox.async_close()
-            except Exception:  # noqa: BLE001
-                _LOGGER.debug("Error closing probe connection", exc_info=True)
+        await async_close_wattbox(wattbox)
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
