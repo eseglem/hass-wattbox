@@ -68,6 +68,9 @@ class WattBoxCoordinator(DataUpdateCoordinator[BaseWattBox]):
                 ) from err
 
             if not is_session_error(err):
+                # A timeout or connection error says nothing about the
+                # credentials, so it breaks any run of logged-out polls.
+                self._logged_out_polls = 0
                 raise UpdateFailed(f"Error communicating with WattBox: {err}") from err
 
             # The device answered, it just would not serve us. Over HTTP that
@@ -76,6 +79,7 @@ class WattBoxCoordinator(DataUpdateCoordinator[BaseWattBox]):
             # to take a manual reload. Build a clean session and try once more.
             _LOGGER.debug("Retrying update on a new session after: %s", err)
             if not await async_reset_session(self.wattbox):
+                self._logged_out_polls = 0
                 raise UpdateFailed(f"Error communicating with WattBox: {err}") from err
 
             try:
@@ -88,9 +92,6 @@ class WattBoxCoordinator(DataUpdateCoordinator[BaseWattBox]):
 
     def _retry_failure(self, err: Exception) -> Exception:
         """Pick the failure to report when a clean session was refused too."""
-        if is_auth_error(err):
-            return ConfigEntryAuthFailed(f"Authentication failed for WattBox: {err}")
-
         if isinstance(err, WattBoxLoggedOut):
             self._logged_out_polls += 1
             if self._logged_out_polls >= _LOGGED_OUT_POLLS_BEFORE_REAUTH:
@@ -99,5 +100,12 @@ class WattBoxCoordinator(DataUpdateCoordinator[BaseWattBox]):
                 return ConfigEntryAuthFailed(
                     f"WattBox turned away {self._logged_out_polls} logins in a row: {err}"
                 )
+            return UpdateFailed(f"Error communicating with WattBox: {err}")
+
+        # Anything else -- an auth error, a timeout, a connection error --
+        # breaks the run of logged-out polls, so the count starts over.
+        self._logged_out_polls = 0
+        if is_auth_error(err):
+            return ConfigEntryAuthFailed(f"Authentication failed for WattBox: {err}")
 
         return UpdateFailed(f"Error communicating with WattBox: {err}")

@@ -97,13 +97,11 @@ def is_session_error(err: BaseException) -> bool:
     """Whether a failure looks like a dead session rather than a dead device.
 
     A refused or nonsensical answer means the device is reachable and talking,
-    just not to us, which a clean session may well fix. Timeouts and connection
-    errors mean it is not answering at all, and retrying those only doubles how
-    long entities take to go unavailable.
+    just not to us, which a clean session may well fix. Timeouts, connection
+    errors, and broken responses mean it is not answering properly at all, and
+    retrying those only doubles how long entities take to go unavailable.
     """
-    return isinstance(
-        err, (WattBoxLoggedOut, httpx.HTTPStatusError, httpx.RemoteProtocolError)
-    )
+    return isinstance(err, (WattBoxLoggedOut, httpx.HTTPStatusError))
 
 
 async def _async_inspect_response(
