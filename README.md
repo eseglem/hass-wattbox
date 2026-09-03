@@ -75,6 +75,32 @@ Configuration Options:
 - **`name_regexp`**: A regexp to extract the name to use for the outlet instead of just the index. If there is a match group, it is used, else the whole match is used.
 - **`skip_regexp`**: A regexp to use that, if the outlet name matches, the outlet is not added as a switch entity.
 
+## Advanced Features
+
+### Per-Outlet Metering
+
+This integration supports per-outlet power monitoring for WattBox models that use the Integration Protocol (IP/SSH/Telnet connections). When enabled, it creates individual sensors for each outlet:
+
+- **Power** (watts)
+- **Current** (amps) 
+- **Voltage** (volts)
+
+**Requirements:**
+- Only available with Telnet or SSH connections (700/800 series)
+- Not available for HTTP connections (150/250/650 series)
+- Automatically disabled for models that don't support it
+
+**How to Enable:**
+1. Go to **Settings → Devices & Services**
+2. Find your WattBox integration and click **Configure**
+3. Enable the **Per-outlet metering** option
+4. Click **Submit** to save changes
+
+**Hardware Compatibility:**
+- **700/800 series**: Full per-outlet metering support via Telnet/SSH
+- **150/250 series**: No per-outlet metering (hardware limitation)
+- **650 series**: HTTP only, no per-outlet metering
+  
 Resources:
 
 - audible_alarm
