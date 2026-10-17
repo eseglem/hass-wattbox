@@ -23,6 +23,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.util import dt as dt_util, slugify
 
+from .api import BaseWattBox
 from .const import (
     CONF_OUTLET_METERING,
     CONF_SKIP_REGEXP,
@@ -137,14 +138,14 @@ def _outlet_sensors(
     consulted at first registration, so a disabled-by-default entity would
     never come back for anyone who already has it.
 
-    Gated on `outlet_power_status`, which only `IpWattBox` defines. Enabling
-    metering on an HTTP unit polls nothing extra and would produce sensors
-    stuck at `unknown` forever -- the XML API reports power for the unit as a
-    whole and never per outlet.
+    Gated on the device actually reporting it. Enabling metering on an HTTP
+    unit polls nothing extra and would produce sensors stuck at `unknown`
+    forever -- the XML API reports power for the unit as a whole and never
+    per outlet.
     """
-    wattbox = hass.data[DOMAIN_DATA][conf_name]
+    wattbox: BaseWattBox = hass.data[DOMAIN_DATA][conf_name]
     enabled = entry.options.get(CONF_OUTLET_METERING, DEFAULT_OUTLET_METERING)
-    supported = bool(getattr(wattbox, "outlet_power_status", False))
+    supported = wattbox.supports_outlet_metering
 
     if enabled and not supported:
         _LOGGER.debug(

@@ -20,9 +20,9 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
-from homeassistant.helpers.importlib import async_import_module
-from pywattbox.base import BaseWattBox
 
+from .api import BaseWattBox, WattBoxAuthError, WattBoxError, WattBoxLoggedOut
+from .connection import async_connect
 from .const import (
     CONF_CONNECTION_TYPE,
     CONF_NAME_REGEXP,
@@ -39,12 +39,6 @@ from .const import (
     DOMAIN,
     DOMAIN_DATA,
 )
-from .session import (
-    WattBoxLoggedOut,
-    async_close_wattbox,
-    async_create_http_wattbox,
-    is_auth_error,
-)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,28 +53,14 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict:
 
     wattbox: BaseWattBox | None = None
     try:
-        if port in (22, 23):
-            from pywattbox.ip_wattbox import async_create_ip_wattbox
-
-            # scrapli imports its transport plugin lazily inside the driver
-            # constructor, which blocks the event loop. Pre-import it here, as
-            # `async_setup_entry` already does for the same reason.
-            transport = "asyncssh" if port == 22 else "asynctelnet"
-            await async_import_module(
-                hass, f"scrapli.transport.plugins.{transport}.transport"
-            )
-
-            wattbox = await async_create_ip_wattbox(
-                host=host, user=username, password=password, port=port
-            )
-        else:
-            await async_import_module(hass, "encodings.ascii")
-
-            wattbox = await async_create_http_wattbox(
-                host=host, user=username, password=password, port=port
-            )
-
-        await wattbox.async_update()
+        wattbox = await async_connect(
+            hass,
+            host,
+            port,
+            username,
+            password,
+            transport=data.get(CONF_CONNECTION_TYPE),
+        )
 
         return {
             "title": name,
@@ -91,25 +71,25 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict:
             "name": name,
             "serial_number": wattbox.serial_number,
             # Whether this device reports power per outlet, known only now that
-            # it has answered. `outlet_power_status` exists on the IP driver
-            # alone, and pywattbox clears it for models that cannot report it.
-            "outlet_metering_supported": bool(
-                getattr(wattbox, "outlet_power_status", False)
-            ),
+            # it has answered.
+            "outlet_metering_supported": wattbox.supports_outlet_metering,
         }
-    except Exception as exc:
-        _LOGGER.error("Error connecting to WattBox %s: %s", host, exc)
+    except (WattBoxAuthError, WattBoxLoggedOut) as exc:
         # A probe starts from a session of its own, so a device that answers it
-        # with the login page is rejecting these credentials, not replaying a
-        # stale login the way a long-running entry can.
-        if isinstance(exc, WattBoxLoggedOut) or is_auth_error(exc):
-            raise InvalidAuth from exc
+        # with the login page -- or with any page that is not its data -- is
+        # rejecting these credentials, not replaying a stale login the way a
+        # long-running entry can (#67).
+        _LOGGER.error("WattBox %s rejected the login: %s", host, exc)
+        raise InvalidAuth from exc
+    except WattBoxError as exc:
+        _LOGGER.error("Error connecting to WattBox %s: %s", host, exc)
         raise CannotConnect from exc
     finally:
         # Probing opens a session on a device that caps concurrent
         # connections. Release it whether or not validation succeeded,
         # otherwise a few failed attempts lock the user out.
-        await async_close_wattbox(wattbox)
+        if wattbox is not None:
+            await wattbox.async_close()
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -124,12 +104,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
+        placeholders: dict[str, str] = {}
         if user_input is not None:
             # The connection type picks the port, so the driver is chosen
             # explicitly rather than guessed. Leaving it implicit is what sends
             # 800-series users to the HTTP driver and an opaque 401.
+            # Stored as well as the port, so the transport never has to be
+            # guessed back from a port number later on.
             user_input = dict(user_input)
-            connection_type = user_input.pop(
+            connection_type = user_input.setdefault(
                 CONF_CONNECTION_TYPE, DEFAULT_CONNECTION_TYPE
             )
             user_input[CONF_PORT] = CONNECTION_TYPES[connection_type]
@@ -151,40 +134,40 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 else:
                     options[CONF_SKIP_REGEXP] = skip_regexp
 
-            if not errors:
-                try:
-                    info = await validate_input(self.hass, user_input)
+            info = (
+                None
+                if errors
+                else await _async_try_validate(
+                    self.hass, user_input, errors, placeholders
+                )
+            )
+            if info is not None:
+                # Outside the `try` above: the abort is raised as an exception,
+                # and the catch-all there used to turn "already configured"
+                # into "unexpected error".
+                unique_id = (
+                    info.get("serial_number") or f"{info['host']}_{info['port']}"
+                )
+                await self.async_set_unique_id(unique_id)
+                self._abort_if_unique_id_configured()
 
-                    unique_id = (
-                        info.get("serial_number") or f"{info['host']}_{info['port']}"
-                    )
-                    await self.async_set_unique_id(unique_id)
-                    self._abort_if_unique_id_configured()
+                # The form has to offer metering before the model is known,
+                # so reconcile it against what the device actually reports.
+                # Storing a preference the hardware cannot honour leaves a
+                # ticked box that does nothing.
+                if not info["outlet_metering_supported"]:
+                    options[CONF_OUTLET_METERING] = False
 
-                    # The form has to offer metering before the model is known,
-                    # so reconcile it against what the device actually reports.
-                    # Storing a preference the hardware cannot honour leaves a
-                    # ticked box that does nothing.
-                    if not info["outlet_metering_supported"]:
-                        options[CONF_OUTLET_METERING] = False
-
-                    return self.async_create_entry(
-                        title=info["title"],
-                        data={
-                            **user_input,
-                            CONF_OUTLET_METERING_SUPPORTED: info[
-                                "outlet_metering_supported"
-                            ],
-                        },
-                        options=options,
-                    )
-                except CannotConnect:
-                    errors["base"] = "cannot_connect"
-                except InvalidAuth:
-                    errors["base"] = "invalid_auth"
-                except Exception:  # pylint: disable=broad-except
-                    _LOGGER.exception("Unexpected exception")
-                    errors["base"] = "unknown"
+                return self.async_create_entry(
+                    title=info["title"],
+                    data={
+                        **user_input,
+                        CONF_OUTLET_METERING_SUPPORTED: info[
+                            "outlet_metering_supported"
+                        ],
+                    },
+                    options=options,
+                )
 
         data_schema = vol.Schema(
             {
@@ -209,7 +192,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
         return self.async_show_form(
-            step_id="user", data_schema=data_schema, errors=errors
+            step_id="user",
+            data_schema=data_schema,
+            errors=errors,
+            description_placeholders=placeholders,
         )
 
     @staticmethod
@@ -233,19 +219,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Prompt the user for new credentials."""
         assert self._reauth_entry is not None
         errors: dict[str, str] = {}
+        placeholders: dict[str, str] = {}
 
         if user_input is not None:
             new_data = {**self._reauth_entry.data, **user_input}
-            try:
-                await validate_input(self.hass, new_data)
-            except CannotConnect:
-                errors["base"] = "cannot_connect"
-            except InvalidAuth:
-                errors["base"] = "invalid_auth"
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected exception during reauth")
-                errors["base"] = "unknown"
-            else:
+            if (
+                await _async_try_validate(self.hass, new_data, errors, placeholders)
+                is not None
+            ):
                 self.hass.config_entries.async_update_entry(
                     self._reauth_entry, data=new_data
                 )
@@ -266,6 +247,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+            description_placeholders=placeholders,
         )
 
 
@@ -281,9 +263,8 @@ class WattBoxOptionsFlow(OptionsFlow):
     def _supports_outlet_metering(self) -> bool:
         """Whether the connected device reports power per outlet.
 
-        Only the IP (telnet/SSH) driver defines `outlet_power_status`, and
-        pywattbox clears it for models that cannot report it, so its presence
-        is the device's own answer rather than a guess from the port number.
+        Recorded on the entry when it was created. Entries older than that
+        fall back to asking the live client.
 
         Defaults to True when the entry is not loaded — a device that cannot
         be reached should not have the option silently dropped from the form,
@@ -294,10 +275,10 @@ class WattBoxOptionsFlow(OptionsFlow):
             return supported
 
         name = self.config_entry.data.get(CONF_NAME)
-        wattbox = self.hass.data.get(DOMAIN_DATA, {}).get(name)
+        wattbox: BaseWattBox | None = self.hass.data.get(DOMAIN_DATA, {}).get(name)
         if wattbox is None:
             return True
-        return hasattr(wattbox, "outlet_power_status")
+        return wattbox.supports_outlet_metering
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -363,6 +344,31 @@ class WattBoxOptionsFlow(OptionsFlow):
         return self.async_show_form(
             step_id="init", data_schema=data_schema, errors=errors
         )
+
+
+async def _async_try_validate(
+    hass: HomeAssistant,
+    data: dict[str, Any],
+    errors: dict[str, str],
+    placeholders: dict[str, str],
+) -> dict[str, Any] | None:
+    """Validate *data*, filling in the form errors if it does not work.
+
+    The client's own explanation goes under the form as well, since "failed
+    to connect" on its own is what left people reading logs to find out why.
+    """
+    try:
+        return await validate_input(hass, data)
+    except CannotConnect as err:
+        errors["base"] = "cannot_connect"
+        placeholders["error_detail"] = str(err.__cause__ or err)
+    except InvalidAuth as err:
+        errors["base"] = "invalid_auth"
+        placeholders["error_detail"] = str(err.__cause__ or err)
+    except Exception:  # pylint: disable=broad-except
+        _LOGGER.exception("Unexpected exception")
+        errors["base"] = "unknown"
+    return None
 
 
 class CannotConnect(exceptions.HomeAssistantError):

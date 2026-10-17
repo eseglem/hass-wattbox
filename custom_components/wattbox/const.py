@@ -58,7 +58,7 @@ CONF_OUTLET_METERING_SUPPORTED: Final[str] = "outlet_metering_supported"
 #: Keys into `SENSOR_TYPES`, so the units, icons and device classes match the
 #: whole-unit equivalents. Only the IP (telnet/SSH) driver fills these -- the
 #: HTTP XML API has no per-outlet values -- which is why creation is gated on
-#: the presence of `outlet_power_status`, an attribute only `IpWattBox` defines.
+#: `BaseWattBox.supports_outlet_metering`.
 OUTLET_SENSOR_TYPES: Final[tuple[str, ...]] = (
     "power_value",
     "current_value",

@@ -12,11 +12,10 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from pywattbox.base import BaseWattBox, Outlet
 
+from .api import BaseWattBox, Outlet
 from .const import CONF_NAME_REGEXP, CONF_SKIP_REGEXP, DOMAIN_DATA, PLUG_ICON
-from .entity import WattBoxEntity
-from .session import async_run_command
+from .entity import WattBoxEntity, async_run_command
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -222,7 +221,14 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         self._attr_is_on = True
         self.async_write_ha_state()
         # Trigger the action on the wattbox.
-        await async_run_command(self._wattbox, self._outlet.async_turn_on)
+        try:
+            await async_run_command(self._outlet.async_turn_on, f"turn on {self.name}")
+        except Exception:
+            # Undo the optimistic state, so the UI does not show a change
+            # that never happened.
+            self._update_attrs()
+            self.async_write_ha_state()
+            raise
         if self._coordinator is not None:
             await self._coordinator.async_request_refresh()
 
@@ -236,7 +242,16 @@ class WattBoxBinarySwitch(WattBoxEntity, SwitchEntity):
         self._attr_is_on = False
         self.async_write_ha_state()
         # Trigger the action on the wattbox.
-        await async_run_command(self._wattbox, self._outlet.async_turn_off)
+        try:
+            await async_run_command(
+                self._outlet.async_turn_off, f"turn off {self.name}"
+            )
+        except Exception:
+            # Undo the optimistic state, so the UI does not show a change
+            # that never happened.
+            self._update_attrs()
+            self.async_write_ha_state()
+            raise
         if self._coordinator is not None:
             await self._coordinator.async_request_refresh()
 

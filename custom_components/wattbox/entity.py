@@ -1,17 +1,19 @@
 """Base Entity component for wattbox."""
 
 import logging
-from collections.abc import Callable, Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from typing import Any, Literal
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import DeviceInfo, Entity
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from pywattbox.base import BaseWattBox
 
+from .api import BaseWattBox, WattBoxError
 from .const import DOMAIN, DOMAIN_DATA, TOPIC_UPDATE
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,6 +44,21 @@ def async_prune_unsupported(
         if entity.unique_id in stale:
             _LOGGER.debug("Removing unsupported entity %s", entity.entity_id)
             registry.async_remove(entity.entity_id)
+
+
+async def async_run_command(
+    command: Callable[[], Awaitable[None]], description: str
+) -> None:
+    """Run an outlet command, reporting a failure the way the UI expects.
+
+    The client has already retried whatever was safe to retry. What is left
+    is a real failure, and raising `HomeAssistantError` shows the reason to
+    whoever pressed the button instead of logging a traceback.
+    """
+    try:
+        await command()
+    except WattBoxError as err:
+        raise HomeAssistantError(f"Could not {description}: {err}") from err
 
 
 class WattBoxEntity(Entity):

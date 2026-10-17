@@ -12,7 +12,7 @@ from typing import Final
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from getmac import get_mac_address  # type: ignore[import-not-found]
+from getmac import get_mac_address
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
@@ -22,18 +22,24 @@ from homeassistant.const import (
     CONF_RESOURCES,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
+    EVENT_HOMEASSISTANT_STOP,
 )
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady, PlatformNotReady
+from homeassistant.core import Event, HomeAssistant
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    ConfigEntryNotReady,
+    PlatformNotReady,
+)
 from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
-from homeassistant.helpers.importlib import async_import_module
 from homeassistant.helpers.typing import ConfigType
-from pywattbox.base import BaseWattBox
 
+from .api import BaseWattBox, WattBoxAuthError, WattBoxError
+from .connection import async_connect
 from .const import (
     BINARY_SENSOR_TYPES,
+    CONF_CONNECTION_TYPE,
     CONF_NAME_REGEXP,
     CONF_OUTLET_METERING,
     CONF_SKIP_REGEXP,
@@ -51,9 +57,6 @@ from .const import (
     TOPIC_UPDATE,
 )
 from .coordinator import WattBoxCoordinator
-from .session import async_close_wattbox, async_create_http_wattbox
-
-REQUIREMENTS: Final[list[str]] = ["pywattbox>=0.7.2"]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -83,39 +86,6 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
-async def _async_create_wattbox(
-    hass: HomeAssistant, host: str, port: int, username: str, password: str
-) -> BaseWattBox:
-    """Create a WattBox instance based on port (IP or HTTP)."""
-    if port in (22, 23):
-        _LOGGER.debug("Importing IP Wattbox")
-        from pywattbox.ip_wattbox import async_create_ip_wattbox
-
-        # Pre-import the transport plugin to avoid blocking call issues
-        transport = "asyncssh" if port == 22 else "asynctelnet"
-        await async_import_module(
-            hass, f"scrapli.transport.plugins.{transport}.transport"
-        )
-
-        _LOGGER.debug("Creating IP WattBox")
-        wattbox: BaseWattBox = await async_create_ip_wattbox(
-            host=host, user=username, password=password, port=port
-        )
-    else:
-        _LOGGER.debug("Importing HTTP Wattbox")
-        # Pre-import the encoding to avoid blocking call issues
-        await async_import_module(hass, "encodings.ascii")
-
-        _LOGGER.debug("Creating HTTP WattBox")
-        # Ours rather than pywattbox's: the driver's own client keeps a cookie
-        # jar and a keep-alive pool it never lets go of. See `session.py`.
-        wattbox = await async_create_http_wattbox(
-            host=host, user=username, password=password, port=port
-        )
-
-    return wattbox
-
-
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up this component."""
     _LOGGER.info(STARTUP)
@@ -142,7 +112,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
         wattbox: BaseWattBox
         try:
-            wattbox = await _async_create_wattbox(hass, host, port, username, password)
+            wattbox = await async_connect(hass, host, port, username, password)
         except Exception as error:
             _LOGGER.error("Error creating WattBox instance: %s", error)
             raise PlatformNotReady from error
@@ -160,9 +130,20 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
         # Use the scan interval to trigger updates
         scan_interval = wattbox_host.get(CONF_SCAN_INTERVAL)
+        # Stopped with Home Assistant, which closes the device first.
         async_track_time_interval(
-            hass, partial(update_data, hass=hass, name=name), scan_interval
+            hass,
+            partial(update_data, hass=hass, name=name),
+            scan_interval,
+            cancel_on_shutdown=True,
         )
+
+    # YAML devices are never unloaded, so this is the only point at which
+    # their sessions can be handed back.
+    hass.bus.async_listen_once(
+        EVENT_HOMEASSISTANT_STOP,
+        partial(_async_close_devices, hass, [w.get(CONF_NAME) for w in domain_config]),
+    )
 
     # Extra logging to ensure the right outlets are set up.
     _LOGGER.debug(", ".join([str(v) for _, v in hass.data[DOMAIN_DATA].items()]))
@@ -173,6 +154,15 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             _LOGGER.debug("Outlet: %s - %s", outlet, repr(outlet))
 
     return True
+
+
+async def _async_close_devices(
+    hass: HomeAssistant, names: list[str], _event: Event
+) -> None:
+    """Close the sessions of the named devices."""
+    for name in names:
+        if (wattbox := hass.data.get(DOMAIN_DATA, {}).get(name)) is not None:
+            await wattbox.async_close()
 
 
 async def update_data(_dt: datetime, hass: HomeAssistant, name: str) -> None:
@@ -239,27 +229,40 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     options = entry.options
     scan_interval = _resolve_scan_interval(entry)
 
+    # Per-outlet metering costs one extra round trip per outlet on every poll,
+    # so it is opt-in. The client only honours it on models that report
+    # per-outlet power at all, and drops it if the device turns out not to.
     wattbox: BaseWattBox
     try:
-        wattbox = await _async_create_wattbox(hass, host, port, username, password)
-    except Exception as error:
-        _LOGGER.error("Error creating WattBox instance: %s", error)
-        raise ConfigEntryNotReady from error
-
-    # Per-outlet metering costs one extra round trip per outlet on every poll,
-    # so it can be switched off. The option can only *disable* it: pywattbox
-    # already decides whether the model reports per-outlet power at all
-    # (`parse_initial` leaves it false on the 150 and 250), and forcing it on
-    # for a device that cannot answer would send `?OutletPowerStatus=N` and
-    # fail the whole poll on an error reply.
-    if hasattr(wattbox, "outlet_power_status") and not options.get(
-        CONF_OUTLET_METERING, DEFAULT_OUTLET_METERING
-    ):
-        wattbox.outlet_power_status = False
+        wattbox = await async_connect(
+            hass,
+            host,
+            port,
+            username,
+            password,
+            transport=entry.data.get(CONF_CONNECTION_TYPE),
+            outlet_metering=options.get(CONF_OUTLET_METERING, DEFAULT_OUTLET_METERING),
+        )
+    except WattBoxAuthError as error:
+        raise ConfigEntryAuthFailed(
+            f"WattBox rejected the credentials: {error}"
+        ) from error
+    except WattBoxError as error:
+        raise ConfigEntryNotReady(f"Cannot reach WattBox {host}: {error}") from error
 
     hass.data[DOMAIN_DATA][name] = wattbox
 
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
+
+    # Home Assistant does not unload entries when it stops, so without this a
+    # restart abandons the session instead of closing it. The 800 series caps
+    # how many it accepts, and holds abandoned ones until they time out.
+    async def _async_close_on_stop(_event: Event) -> None:
+        await wattbox.async_close()
+
+    entry.async_on_unload(
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _async_close_on_stop)
+    )
 
     # Everything past the point the session exists has to hand it back if it
     # fails. Home Assistant does not call `async_unload_entry` for a setup that
@@ -277,6 +280,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         await coordinator.async_config_entry_first_refresh()
 
+        # Telnet and SSH devices push `~OutletStatus` when outlets change
+        # (seen after a switch command, #66). Apply it without waiting for
+        # the next poll. HTTP devices never push, so this is a no-op there.
+        entry.async_on_unload(wattbox.add_listener(coordinator.async_update_listeners))
+
         hass.data.setdefault(DOMAIN, {})
         hass.data[DOMAIN][name] = coordinator
 
@@ -285,7 +293,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception:
         hass.data.get(DOMAIN_DATA, {}).pop(name, None)
         hass.data.get(DOMAIN, {}).pop(name, None)
-        await async_close_wattbox(wattbox)
+        await wattbox.async_close()
         raise
 
     return True
@@ -305,6 +313,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         wattbox = hass.data.get(DOMAIN_DATA, {}).pop(name, None)
         hass.data.get(DOMAIN, {}).pop(name, None)
-        await async_close_wattbox(wattbox)
+        if wattbox is not None:
+            await wattbox.async_close()
 
     return unload_ok

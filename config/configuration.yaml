@@ -17,5 +17,4 @@ logger:
   default: warning
   logs:
     custom_components.wattbox: debug
-    pywattbox: debug
-    # scrapli: debug
+    # asyncssh: debug
