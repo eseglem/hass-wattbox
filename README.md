@@ -18,19 +18,22 @@ Easiest way to install this component is through [HACS][hacs].
 
 ### UI Configuration (Recommended)
 
-Starting with version 1.0.0, this integration supports UI-based configuration through the Home Assistant interface:
+1. Go to **Settings → Devices & services**
+2. Click **Add Integration** and search for **WattBox**
+3. Enter your WattBox connection details:
+   - **Host**: IP address of your WattBox
+   - **Connection type**: how to talk to it (see below)
+   - **Username** / **Password**: the WattBox's own login (default: `wattbox` / `wattbox`)
+   - **Name**: friendly name for the device and its entities
+   - **Skip outlets matching** (optional): a regular expression for outlets that must never get a switch or reset button, such as the one powering your router
+   - **Per-outlet metering** (optional, telnet/SSH only): power, current and voltage sensors for each outlet
 
-1. Go to Configuration → Integrations
-2. Click "Add Integration"
-3. Search for "WattBox"
-4. Enter your WattBox connection details:
-   - **Host**: IP address of your WattBox device
-   - **Port**: Port number (default 80 for HTTP, 22/23 for SSH)
-   - **Username**: Authentication username (default: wattbox)
-   - **Password**: Authentication password (default: wattbox)
-   - **Name**: Friendly name for your WattBox device
+| Series | Connection type | Notes |
+| --- | --- | --- |
+| 800 (WB-800-IPVM, WB-800VPS-IPVM, …) | **Telnet** (port 23) | The 800 series has no HTTP API: it rejects every HTTP login with `401`. Its SSH port is reserved for OvrC and normally rejects the device's own credentials. |
+| 150, 250, 300, 700 | **HTTP** (port 80) | Reports power for the unit as a whole, not per outlet. |
 
-Each WattBox will now appear as a **device** in Home Assistant with all its entities (sensors, switches, etc.) grouped under it.
+Each WattBox appears as a **device** in Home Assistant with all of its entities grouped under it. Telnet and SSH connections push outlet changes to Home Assistant as the WattBox reports them, without waiting for the next poll.
 
 ### YAML Configuration (Legacy)
 
@@ -67,7 +70,7 @@ Configuration Options:
 
 - **`host`**: Host IP of the WattBox (Required)
 - **`name`**: Name for the WattBox (Default WattBox)
-- **`port`**: Port of the HTTP interface (Default 80)
+- **`port`**: `80` for HTTP, `23` for telnet, `22` for SSH (Default 80)
 - **`username`**: Username for authentication (Default wattbox)
 - **`password`**: Password for authentication (Default wattbox)
 - **`scan_interval`**: A time interval run updates at (Default 30s, format HH:MM:SS)
@@ -97,6 +100,32 @@ Be careful, if the WattBox controls the power to its own networking equipment yo
 
 Master switch will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly. If ALL of the switches controlled by Master are on, then Master will be on. Otherwise it will be off. If any outlets on a wattbox are skipped via `skip_regexp` then
 the master switch for that wattbox will also not be added as an entity.
+
+## Troubleshooting
+
+- **"The WattBox rejected the login: … answered 401"** on an 800-series unit: pick **Telnet**. The 800 series has no HTTP API.
+- **"… closed the connection before logging in"**: the WattBox already has as many sessions open as it allows. This integration keeps one session per device and closes it on reload and shutdown. If other systems (Control4, OvrC, scripts) also connect, close those or wait for the device to time them out.
+- **"… answered, but not with the WattBox status data"**: the HTTP interface served a page that is not its data, which almost always means the credentials were not accepted.
+- When reporting a bug, enable debug logging and attach the **diagnostics** download from the device page (credentials, host and serial number are redacted):
+
+  ```yaml
+  logger:
+    logs:
+      custom_components.wattbox: debug
+  ```
+
+## Development
+
+The integration talks to the WattBox through its own small client in `custom_components/wattbox/api/`, which has no Home Assistant imports. It replaced [pywattbox](https://github.com/eseglem/pywattbox), whose IP driver was built on scrapli and stopped importing once scrapli 2 was released.
+
+```shell
+scripts/setup                 # install requirements.txt
+python -m pytest tests        # unit and Home Assistant tests, against simulated WattBoxes
+python -m tests.simulator     # a simulated 800 (telnet, port 2323) and 300 (HTTP, port 8080)
+sudo python scripts/e2e.py    # boots a real Home Assistant against the simulators
+```
+
+`tests/simulator.py` is modelled on wire captures from real hardware (see #55 and #66). It is not a substitute for testing on a real WattBox before a release.
 
 Based on: [ludeeus/integration_blueprint][blueprint]
 

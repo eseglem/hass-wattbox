@@ -21,7 +21,9 @@ This component should work with or without a battery. It reports all values avai
 
 Each WattBox device now appears as a single device in Home Assistant with all its entities (sensors, binary sensors, switches) grouped underneath it. This makes organization much cleaner and provides better device management.
 
-It also creates a master switch that should function the same as the master switch on the unit. It will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly. I have not found an API to control it yet.
+**Connection type:** the 800 series uses **Telnet** — it has no HTTP API. The 150, 250, 300 and 700 series use **HTTP**.
+
+Over HTTP it also creates a master switch that should function the same as the master switch on the unit. It will turn on / off all the switches that the physical switch on the box does. You can config that through the UI on the wattbox directly. I have not found an API to control it yet.
 
 Be careful, if the WattBox controls the power to its own networking equipment you can turn it off and not have remote access until you fix it. You may even have to plug it in elsewhere to get back online and turn that outlet back on in HA.
 
@@ -44,6 +46,7 @@ wattbox:
   name: [OPTIONAL: Default wattbox]
   username: [OPTIONAL: Default wattbox]
   password: [OPTIONAL: Default wattbox]
+  port: [OPTIONAL: 80 for HTTP (default), 23 for telnet, 22 for SSH]
   scan_interval: [OPTIONAL: Default 00:00:30]
 ```
 
