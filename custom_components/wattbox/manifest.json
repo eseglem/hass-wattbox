@@ -13,14 +13,12 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/eseglem/hass-wattbox/issues",
   "loggers": [
-    "wattbox",
-    "pywattbox",
-    "httpx",
-    "http-core",
-    "scrapli"
+    "asyncssh",
+    "getmac",
+    "httpx"
   ],
   "requirements": [
-    "pywattbox[http,ip]==0.9.0",
+    "asyncssh>=2.14.0",
     "getmac>=0.9.4"
   ],
   "version": "1.1.0"

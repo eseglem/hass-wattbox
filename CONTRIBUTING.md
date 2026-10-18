@@ -50,6 +50,10 @@ Use [black](https://github.com/ambv/black) to make sure the code follows the sty
 
 ## Test your code modification
 
+Run `python -m pytest tests`. The tests run the integration against simulated
+WattBoxes (`tests/simulator.py`), so no hardware is needed. For a full run of
+a real Home Assistant against the simulators, see `scripts/e2e.py`.
+
 This custom component is based on [ludeeus/integration_blueprint](https://github.com/ludeeus/integration_blueprint).
 
 It comes with development environment in a container, easy to launch

@@ -7,21 +7,15 @@ from typing import Final
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from pywattbox.base import BaseWattBox
 
-from .session import (
-    WattBoxLoggedOut,
-    async_reset_session,
-    is_auth_error,
-    is_session_error,
-)
+from .api import BaseWattBox, WattBoxAuthError, WattBoxError, WattBoxLoggedOut
 
 _LOGGER = logging.getLogger(__name__)
 
 # An HTTP session can lapse while the device is perfectly healthy, so one
-# logged-out poll says nothing about the credentials. Only ask for new ones
-# once a session built moments earlier has been turned away this many polls
-# running.
+# logged-out poll says nothing about the credentials. The client has already
+# retried each of these on a session built moments earlier; only ask for new
+# credentials once that has been turned away this many polls running.
 _LOGGED_OUT_POLLS_BEFORE_REAUTH: Final[int] = 3
 
 
@@ -61,51 +55,25 @@ class WattBoxCoordinator(DataUpdateCoordinator[BaseWattBox]):
         """Fetch data from the WattBox device."""
         try:
             await self.wattbox.async_update()
-        except Exception as err:
-            if is_auth_error(err):
+        except WattBoxAuthError as err:
+            self._logged_out_polls = 0
+            raise ConfigEntryAuthFailed(
+                f"Authentication failed for WattBox: {err}"
+            ) from err
+        except WattBoxLoggedOut as err:
+            self._logged_out_polls += 1
+            if self._logged_out_polls >= _LOGGED_OUT_POLLS_BEFORE_REAUTH:
+                # Fresh sessions, refused this many times in a row: the
+                # credentials on the entry are no longer the device's.
                 raise ConfigEntryAuthFailed(
-                    f"Authentication failed for WattBox: {err}"
+                    f"WattBox turned away {self._logged_out_polls} logins in a row: {err}"
                 ) from err
-
-            if not is_session_error(err):
-                # A timeout or connection error says nothing about the
-                # credentials, so it breaks any run of logged-out polls.
-                self._logged_out_polls = 0
-                raise UpdateFailed(f"Error communicating with WattBox: {err}") from err
-
-            # The device answered, it just would not serve us. Over HTTP that
-            # is usually a session the driver has outlived: it replays the dead
-            # one on every request from then on, which is why recovering used
-            # to take a manual reload. Build a clean session and try once more.
-            _LOGGER.debug("Retrying update on a new session after: %s", err)
-            if not await async_reset_session(self.wattbox):
-                self._logged_out_polls = 0
-                raise UpdateFailed(f"Error communicating with WattBox: {err}") from err
-
-            try:
-                await self.wattbox.async_update()
-            except Exception as retry_err:
-                raise self._retry_failure(retry_err) from retry_err
+            raise UpdateFailed(f"Error communicating with WattBox: {err}") from err
+        except WattBoxError as err:
+            # A timeout or connection error says nothing about the
+            # credentials, so it breaks any run of logged-out polls.
+            self._logged_out_polls = 0
+            raise UpdateFailed(f"Error communicating with WattBox: {err}") from err
 
         self._logged_out_polls = 0
         return self.wattbox
-
-    def _retry_failure(self, err: Exception) -> Exception:
-        """Pick the failure to report when a clean session was refused too."""
-        if isinstance(err, WattBoxLoggedOut):
-            self._logged_out_polls += 1
-            if self._logged_out_polls >= _LOGGED_OUT_POLLS_BEFORE_REAUTH:
-                # Sessions built seconds ago, refused this many times in a row:
-                # the credentials on the entry are no longer the device's.
-                return ConfigEntryAuthFailed(
-                    f"WattBox turned away {self._logged_out_polls} logins in a row: {err}"
-                )
-            return UpdateFailed(f"Error communicating with WattBox: {err}")
-
-        # Anything else -- an auth error, a timeout, a connection error --
-        # breaks the run of logged-out polls, so the count starts over.
-        self._logged_out_polls = 0
-        if is_auth_error(err):
-            return ConfigEntryAuthFailed(f"Authentication failed for WattBox: {err}")
-
-        return UpdateFailed(f"Error communicating with WattBox: {err}")
