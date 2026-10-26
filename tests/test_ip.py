@@ -255,3 +255,22 @@ async def test_ssh_bad_password(socket_enabled: None) -> None:
             )
     finally:
         await sim.stop()
+
+
+async def test_ups_state_follows_the_device(telnet_sim: TelnetSimulator) -> None:
+    telnet_sim.state.has_ups = True
+    wattbox = await _connect(telnet_sim)
+    try:
+        assert wattbox.has_ups is True
+        telnet_sim.state.has_ups = False
+        await wattbox.async_update()
+        assert wattbox.has_ups is False
+        telnet_sim.state.has_ups = True
+        await wattbox.async_update()
+        assert wattbox.has_ups is True
+        # A firmware that cannot answer keeps what is known.
+        telnet_sim.unsupported.add("?UPSConnection")
+        await wattbox.async_update()
+        assert wattbox.has_ups is True
+    finally:
+        await wattbox.async_close()

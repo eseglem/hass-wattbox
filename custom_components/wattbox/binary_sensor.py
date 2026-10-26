@@ -10,18 +10,19 @@ from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
+from .api import BaseWattBox
 from .const import (
     BINARY_SENSOR_TYPES,
     DOMAIN_DATA,
     HTTP_ONLY_BINARY_SENSORS,
     UPS_ONLY_BINARY_SENSORS,
 )
-from .entity import WattBoxEntity, async_prune_unsupported
+from .entity import WattBoxEntity, async_prune_unsupported, ups_entities_wanted
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _is_supported(hass: HomeAssistant, name: str, sensor_type: str) -> bool:
+def _is_supported(entry: ConfigEntry, wattbox: BaseWattBox, sensor_type: str) -> bool:
     """Whether this sensor can ever carry a real value on this device.
 
     A WattBox with no UPS reports a zeroed placeholder UPS tuple, and the IP
@@ -33,13 +34,8 @@ def _is_supported(hass: HomeAssistant, name: str, sensor_type: str) -> bool:
     first registered, so it does nothing for anyone who already has these
     entities. Skipping creation takes effect on every reload.
     """
-    wattbox = hass.data.get(DOMAIN_DATA, {}).get(name)
-    if wattbox is None:
-        return True
-    if sensor_type in UPS_ONLY_BINARY_SENSORS and not getattr(
-        wattbox, "has_ups", False
-    ):
-        return False
+    if sensor_type in UPS_ONLY_BINARY_SENSORS:
+        return ups_entities_wanted(entry, wattbox)
     if (
         sensor_type in HTTP_ONLY_BINARY_SENSORS
         and getattr(wattbox, sensor_type, None) is None
@@ -70,7 +66,7 @@ async def async_setup_entry(
             if sensor_type not in BINARY_SENSOR_TYPES:
                 continue
 
-            if not _is_supported(hass, name, sensor_type):
+            if not _is_supported(entry, wattbox, sensor_type):
                 _LOGGER.debug(
                     "Skipping unsupported binary sensor %s for %s", sensor_type, name
                 )
@@ -141,6 +137,13 @@ class WattBoxBinarySensor(WattBoxEntity, BinarySensorEntity):
     async def async_update(self) -> None:
         """Update the sensor (legacy poll fallback)."""
         self._update_attrs()
+
+    @property
+    def available(self) -> bool:
+        """Unavailable, rather than a stale reading, while the UPS is missing."""
+        if self.sensor_type in UPS_ONLY_BINARY_SENSORS and not self._wattbox.has_ups:
+            return False
+        return super().available
 
     @callback
     def _update_attrs(self) -> None:

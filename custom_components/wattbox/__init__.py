@@ -43,6 +43,7 @@ from .const import (
     CONF_NAME_REGEXP,
     CONF_OUTLET_METERING,
     CONF_SKIP_REGEXP,
+    CONF_UPS_SEEN,
     DEFAULT_NAME,
     DEFAULT_OUTLET_METERING,
     DEFAULT_PASSWORD,
@@ -252,6 +253,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN_DATA][name] = wattbox
 
+    # Before the update listener exists, so recording it does not reload.
+    if wattbox.has_ups and not entry.data.get(CONF_UPS_SEEN):
+        hass.config_entries.async_update_entry(
+            entry, data={**entry.data, CONF_UPS_SEEN: True}
+        )
+
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
 
     # Home Assistant does not unload entries when it stops, so without this a
@@ -276,7 +283,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         # Create coordinator for polling and availability tracking
         coordinator = WattBoxCoordinator(
-            hass, wattbox, name, scan_interval, mac_address=mac_address
+            hass, entry, wattbox, name, scan_interval, mac_address=mac_address
         )
         await coordinator.async_config_entry_first_refresh()
 

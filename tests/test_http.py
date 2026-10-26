@@ -95,3 +95,21 @@ async def test_commands_and_master(http_sim: HttpSimulator) -> None:
         assert wattbox.master_outlet.status is False
     finally:
         await wattbox.async_close()
+
+
+async def test_ups_state_follows_the_device(http_sim: HttpSimulator) -> None:
+    http_sim.state.has_ups = True
+    wattbox = await async_create_wattbox(
+        "127.0.0.1", http_sim.port, "wattbox", "wattbox"
+    )
+    try:
+        assert wattbox.has_ups is True
+        assert wattbox.battery_charge == 100
+        http_sim.state.has_ups = False
+        await wattbox.async_update()
+        assert wattbox.has_ups is False
+        http_sim.state.has_ups = True
+        await wattbox.async_update()
+        assert wattbox.has_ups is True
+    finally:
+        await wattbox.async_close()

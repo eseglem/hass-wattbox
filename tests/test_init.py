@@ -30,6 +30,7 @@ from custom_components.wattbox.const import (
     CONF_CONNECTION_TYPE,
     CONF_OUTLET_METERING,
     CONF_SKIP_REGEXP,
+    CONF_UPS_SEEN,
     DOMAIN,
 )
 from custom_components.wattbox.diagnostics import async_get_config_entry_diagnostics
@@ -257,3 +258,58 @@ async def test_yaml(hass: HomeAssistant, http_sim: HttpSimulator) -> None:
     hass.bus.async_fire(EVENT_HOMEASSISTANT_STOP)
     await hass.async_block_till_done()
     assert wattbox._client is None
+
+
+def _ups_entities(hass: HomeAssistant, entry: MockConfigEntry) -> set[str]:
+    registry = er.async_get(hass)
+    return {
+        e.entity_id
+        for e in er.async_entries_for_config_entry(registry, entry.entry_id)
+        if "battery" in e.entity_id or e.entity_id.endswith(("_mute", "_alarm"))
+    }
+
+
+async def test_ups_dropping_out(hass: HomeAssistant, http_sim: HttpSimulator) -> None:
+    """A UPS that goes missing, even across a reload, keeps its entities."""
+    http_sim.state.has_ups = True
+    entry = _entry(http_sim.port, "http")
+    await _setup(hass, entry)
+    assert entry.data[CONF_UPS_SEEN] is True
+    ups_entities = _ups_entities(hass, entry)
+    assert "sensor.rack_battery_charge" in ups_entities
+
+    # Missing: noticed on the next poll, and the readings go unavailable.
+    http_sim.state.has_ups = False
+    await _poll(hass)
+    assert hass.states.get("binary_sensor.rack_has_ups").state == STATE_OFF
+    assert hass.states.get("sensor.rack_battery_charge").state == STATE_UNAVAILABLE
+    assert hass.states.get("sensor.rack_voltage").state == "120.1"
+
+    # Reloaded while missing: the entities stay.
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert _ups_entities(hass, entry) == ups_entities
+    assert hass.states.get("sensor.rack_battery_charge").state == STATE_UNAVAILABLE
+
+    # Back: noticed on the next poll, with no reload needed.
+    http_sim.state.has_ups = True
+    await _poll(hass)
+    assert hass.states.get("binary_sensor.rack_has_ups").state == STATE_ON
+    assert hass.states.get("sensor.rack_battery_charge").state == "100"
+    await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_ups_attached_later(hass: HomeAssistant, http_sim: HttpSimulator) -> None:
+    entry = _entry(http_sim.port, "http")
+    await _setup(hass, entry)
+    assert CONF_UPS_SEEN not in entry.data
+    assert not _ups_entities(hass, entry)
+
+    http_sim.state.has_ups = True
+    await _poll(hass)
+    # Recorded, and the entry reloaded to create the UPS entities.
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert entry.data[CONF_UPS_SEEN] is True
+    assert entry.state is ConfigEntryState.LOADED
+    assert hass.states.get("sensor.rack_battery_charge").state == "100"
+    await hass.config_entries.async_unload(entry.entry_id)

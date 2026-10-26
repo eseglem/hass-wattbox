@@ -14,7 +14,7 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .api import BaseWattBox, WattBoxError
-from .const import DOMAIN, DOMAIN_DATA, TOPIC_UPDATE
+from .const import CONF_UPS_SEEN, DOMAIN, DOMAIN_DATA, TOPIC_UPDATE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,6 +44,18 @@ def async_prune_unsupported(
         if entity.unique_id in stale:
             _LOGGER.debug("Removing unsupported entity %s", entity.entity_id)
             registry.async_remove(entity.entity_id)
+
+
+def ups_entities_wanted(entry: ConfigEntry, wattbox: BaseWattBox | None) -> bool:
+    """Whether this device gets the UPS entities.
+
+    Once a UPS has been seen they stay, unavailable while it is missing, so a
+    load that happens to catch the WattBox before it has found its UPS again
+    does not delete them -- and the names, areas and dashboards that use them.
+    """
+    return bool(entry.data.get(CONF_UPS_SEEN)) or (
+        wattbox is not None and wattbox.has_ups
+    )
 
 
 async def async_run_command(

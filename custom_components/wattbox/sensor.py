@@ -33,13 +33,13 @@ from .const import (
     SENSOR_TYPES,
     UPS_ONLY_SENSORS,
 )
-from .entity import WattBoxEntity, async_prune_unsupported
+from .entity import WattBoxEntity, async_prune_unsupported, ups_entities_wanted
 from .switch import validate_regex
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _is_supported(hass: HomeAssistant, name: str, sensor_type: str) -> bool:
+def _is_supported(entry: ConfigEntry, wattbox: BaseWattBox, sensor_type: str) -> bool:
     """Whether this sensor can ever carry a real value on this device.
 
     A WattBox with no UPS still answers `?UPSStatus`, but with a zeroed
@@ -49,14 +49,9 @@ def _is_supported(hass: HomeAssistant, name: str, sensor_type: str) -> bool:
     Unsupported sensors are *not created*, rather than created disabled.
     `entity_registry_enabled_default` is only consulted when an entity is
     first registered, so it does nothing for anyone who already has these
-    entities -- which is everyone upgrading. Skipping creation takes effect on
-    every reload, and the entities come back by themselves if a UPS is later
-    attached.
+    entities -- which is everyone upgrading.
     """
-    if sensor_type not in UPS_ONLY_SENSORS:
-        return True
-    wattbox = hass.data.get(DOMAIN_DATA, {}).get(name)
-    return wattbox is None or bool(getattr(wattbox, "has_ups", False))
+    return sensor_type not in UPS_ONLY_SENSORS or ups_entities_wanted(entry, wattbox)
 
 
 async def async_setup_entry(
@@ -81,7 +76,7 @@ async def async_setup_entry(
             if (sensor_type := resource.lower()) not in SENSOR_TYPES:
                 continue
 
-            if not _is_supported(hass, conf_name, sensor_type):
+            if not _is_supported(entry, wattbox, sensor_type):
                 _LOGGER.debug(
                     "Skipping unsupported sensor %s for %s", sensor_type, conf_name
                 )
@@ -256,6 +251,13 @@ class WattBoxSensor(WattBoxEntity, SensorEntity):
     async def async_update(self) -> None:
         """Update the sensor (legacy poll fallback)."""
         self._update_attrs()
+
+    @property
+    def available(self) -> bool:
+        """Unavailable, rather than a stale reading, while the UPS is missing."""
+        if self.sensor_type in UPS_ONLY_SENSORS and not self._wattbox.has_ups:
+            return False
+        return super().available
 
     @callback
     def _update_attrs(self) -> None:

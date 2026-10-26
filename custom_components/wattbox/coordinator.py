@@ -4,11 +4,13 @@ import logging
 from datetime import timedelta
 from typing import Final
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import BaseWattBox, WattBoxAuthError, WattBoxError, WattBoxLoggedOut
+from .const import CONF_UPS_SEEN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,9 +34,12 @@ class WattBoxCoordinator(DataUpdateCoordinator[BaseWattBox]):
     wattbox: BaseWattBox
     mac_address: str | None
 
+    config_entry: ConfigEntry
+
     def __init__(
         self,
         hass: HomeAssistant,
+        entry: ConfigEntry,
         wattbox: BaseWattBox,
         name: str,
         scan_interval: timedelta,
@@ -44,6 +49,7 @@ class WattBoxCoordinator(DataUpdateCoordinator[BaseWattBox]):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=entry,
             name=f"WattBox {name}",
             update_interval=scan_interval,
         )
@@ -76,4 +82,15 @@ class WattBoxCoordinator(DataUpdateCoordinator[BaseWattBox]):
             raise UpdateFailed(f"Error communicating with WattBox: {err}") from err
 
         self._logged_out_polls = 0
+
+        if self.wattbox.has_ups and not self.config_entry.data.get(CONF_UPS_SEEN):
+            # A UPS attached since the entry loaded. Recording it fires the
+            # entry's update listener, which reloads it and so creates the
+            # UPS entities.
+            _LOGGER.info("%s now reports a UPS; adding its entities", self.name)
+            self.hass.config_entries.async_update_entry(
+                self.config_entry,
+                data={**self.config_entry.data, CONF_UPS_SEEN: True},
+            )
+
         return self.wattbox

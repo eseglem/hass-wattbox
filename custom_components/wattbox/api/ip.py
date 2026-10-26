@@ -547,6 +547,10 @@ class IpWattBox(BaseWattBox):
             raise WattBoxProtocolError(f"unreadable reply: {err}") from err
 
     async def _update(self) -> None:
+        # Read on every poll, not just at setup: a UPS can drop off and come
+        # back while the integration is running. `#Error` keeps what is known.
+        if (connected := await self._optional(REQ_UPS_CONNECTION)) is not None:
+            self.has_ups = connected == "1"
         if (auto_reboot := await self._optional(REQ_AUTO_REBOOT)) is not None:
             self.auto_reboot = auto_reboot == "1"
         self._apply_power_status(await self._exchange(REQ_POWER_STATUS))

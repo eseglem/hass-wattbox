@@ -226,6 +226,10 @@ class HttpWattBox(BaseWattBox):
             raise WattBoxProtocolError(f"unreadable status data: {err}") from err
 
     def _apply_fields(self, root: ET.Element) -> None:
+        # Read on every poll, not just at setup: a UPS can drop off and come
+        # back while the integration is running.
+        if (has_ups := _flag(root, "hasUPS")) is not None:
+            self.has_ups = has_ups
         self._apply_status(root)
         self._apply_power(root)
         if self.has_ups:

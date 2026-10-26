@@ -54,6 +54,12 @@ CONF_OUTLET_METERING: Final[str] = "outlet_metering"
 DEFAULT_OUTLET_METERING: Final[bool] = False
 CONF_OUTLET_METERING_SUPPORTED: Final[str] = "outlet_metering_supported"
 
+#: Set on the entry once the device has reported a UPS. From then on the UPS
+#: entities are kept, and shown as unavailable while the UPS is not reported,
+#: instead of being deleted whenever one load happens to see no UPS -- a
+#: WattBox that has just rebooted can take a while to find its UPS again.
+CONF_UPS_SEEN: Final[str] = "ups_seen"
+
 #: The sensors created per outlet when metering is on, in display order.
 #: Keys into `SENSOR_TYPES`, so the units, icons and device classes match the
 #: whole-unit equivalents. Only the IP (telnet/SSH) driver fills these -- the
@@ -82,8 +88,8 @@ DEFAULT_CONNECTION_TYPE: Final[str] = CONNECTION_TELNET
 #: Entities that only carry meaning when a UPS is attached. On a WattBox with
 #: no UPS the device still answers `?UPSStatus`, but with a zeroed placeholder
 #: tuple, so these would sit at 0/off forever while still being polled and
-#: recorded. They are not created when `has_ups` is false, and appear on their
-#: own once a UPS is attached and the entry reloads.
+#: recorded. They are created once the device has reported a UPS (recorded
+#: under `CONF_UPS_SEEN`), and are unavailable while it is not reporting one.
 UPS_ONLY_SENSORS: Final[frozenset[str]] = frozenset(
     {"battery_charge", "battery_load", "est_run_time"}
 )
